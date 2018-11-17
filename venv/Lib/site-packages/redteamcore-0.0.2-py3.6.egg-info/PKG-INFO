@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: redteamcore
+Version: 0.0.2
+Summary: Core Python modules for use in tooling.
+Home-page: https://github.com/fedoraredteam/redteamcore
+Author: Kenneth Evensen
+Author-email: kevensen@redhat.com
+License: GPLv3
+Download-URL: https://github.com/fedoraredteam/redteamcore/archive/0.0.2.tar.gz
+Description: UNKNOWN
+Keywords: frt,redteam,linux
+Platform: Linux
+Platform: OSX
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 2.7
