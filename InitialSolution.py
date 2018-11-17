@@ -120,16 +120,20 @@ for curriculum in curricula:
 
 print("solution", initial_solution)
 
-ObjectiveFunction.room_capacity_penalties(initial_solution)
-ObjectiveFunction.min_wdays_penalties(initial_solution)
-ObjectiveFunction.windows_penalties(initial_solution)
-ObjectiveFunction.minmax_load_penalties(initial_solution)
-ObjectiveFunction.double_lectures_penalties(initial_solution)
-ObjectiveFunction.isolated_lectures_penalties(initial_solution)
-ObjectiveFunction.room_stability_penalties(initial_solution)
+obj_func = ObjectiveFunction.ObjectveFunction('UD2')
+
+score = obj_func.objective_function(initial_solution)
+
+# obj_func.room_capacity_penalties(initial_solution)
+# obj_func.min_wdays_penalties(initial_solution)
+# obj_func.windows_penalties(initial_solution)
+# obj_func.minmax_load_penalties(initial_solution)
+# obj_func.double_lectures_penalties(initial_solution)
+# obj_func.isolated_lectures_penalties(initial_solution)
+# obj_func.room_stability_penalties(initial_solution)
 
 
-
+print('done')
 # Violations/Penalties
 
 
