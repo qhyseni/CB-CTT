@@ -46,7 +46,7 @@ def worst_curricula_removal(schedule, curriculum_penalties, destroy_limit, xmlda
             for j in range(xmldata.PeriodsPerDay):
                 for k in range(len(xmldata.Rooms)):
                     lecture = schedule[i][j][k]
-                    if lecture != 0 and lecture[1] == a[0]:
+                    if lecture != 0 and lecture[0] == a[0]:
                         lectures_removed.append(lecture)
                         schedule[i][j][k] = 0
         destroy_limit -= 1
@@ -63,13 +63,15 @@ def random_lecture_removal(schedule, destroy_limit, xmldata):
         day = randint(0, xmldata.Days - 1)
         period = randint(0, xmldata.PeriodsPerDay - 1)
         room = randint(0, len(xmldata.Rooms) - 1)
-
-        lectures_removed.append(schedule[day][period][room])
-        schedule[day][period][room] = 0
+        if schedule[day][period][room] != 0:
+            lectures_removed.append(schedule[day][period][room])
+            schedule[day][period][room] = 0
+            destroy_limit -= 1
 
     return schedule, lectures_removed
 
-# The random destroy operator removes lectures from the schedule at random.
+# The random period destroy operator repetitively selects a day-period pair at random and
+# removes all its scheduled lectures
 def random_dayperiod_removal(schedule, destroy_limit, xmldata):
 
     lectures_removed = []
@@ -77,17 +79,20 @@ def random_dayperiod_removal(schedule, destroy_limit, xmldata):
     while destroy_limit > 0:
         day = randint(0, xmldata.Days - 1)
         period = randint(0, xmldata.PeriodsPerDay - 1)
-
-        for k in range(len(xmldata.Rooms)):
-            lectures_removed.append(schedule[day][period][k])
-            schedule[day][period][k] = 0
-
-            destroy_limit -= 1
+        rooms_count = len(xmldata.Rooms)
+        for k in range(rooms_count):
+            if destroy_limit == 0:
+                break
+            if schedule[day][period][k] != 0:
+                lectures_removed.append(schedule[day][period][k])
+                schedule[day][period][k] = 0
+                destroy_limit -= 1
 
     return schedule, lectures_removed
 
 
-# The random destroy operator removes lectures from the schedule at random.
+# The roomday destroy operator repetitively removes all lectures that are assigned to a randomly
+# selected room on a randomly selected day.
 def random_roomday_removal(schedule, destroy_limit, xmldata):
 
     lectures_removed = []
@@ -97,15 +102,18 @@ def random_roomday_removal(schedule, destroy_limit, xmldata):
         room = randint(0, len(xmldata.Rooms) - 1)
 
         for j in range(xmldata.PeriodsPerDay):
-            lectures_removed.append(schedule[day][j][room])
-            schedule[day][j][room] = 0
-
-            destroy_limit -= 1
+            if destroy_limit == 0:
+                break
+            if schedule[day][j][room] != 0:
+                lectures_removed.append(schedule[day][j][room])
+                schedule[day][j][room] = 0
+                destroy_limit -= 1
 
     return schedule, lectures_removed
 
 
-# The random destroy operator removes lectures from the schedule at random.
+# The teacher operator is used to ease restrictions regarding teacher conflicts. Teachers are
+# randomly selected and all of their lectures are removed from the schedule.
 def random_teacher_removal(schedule, destroy_limit, xmldata):
 
     lectures_removed = []
@@ -115,10 +123,11 @@ def random_teacher_removal(schedule, destroy_limit, xmldata):
     while destroy_limit > 0:
 
         rand_teacher = random.choice(teachers)
+        rooms_count = len(xmldata.Rooms)
 
         for i in range(xmldata.Days):
             for j in range(xmldata.PeriodsPerDay):
-                for k in range(len(xmldata.Rooms)):
+                for k in range(rooms_count):
                     lecture = schedule[i][j][k]
                     if lecture != 0 and lecture[2] == rand_teacher:
                         lectures_removed.append(lecture)
@@ -152,11 +161,19 @@ for curriculum in curricula:
 
 obj_func_instance = ObjectiveFunction.ObjectiveFunction("UD2", xmldata)
 
-old_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(initial_solution, course_penalties)
+old_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(initial_solution, course_penalties, curriculum_penalties)
 destroy_limit = math.floor(0.2 * len(xmldata.Courses))
 
-# blah = worst_removal(initial_solution, course_penalties, destroy_limit, xmldata, 5)
+# x1,  x2 = worst_courses_removal(initial_solution, course_penalties, destroy_limit, xmldata, 5)
+# x1,  x2 = worst_curricula_removal(initial_solution, curriculum_penalties, destroy_limit, xmldata, 5)
+# x1,  x2 = random_lecture_removal(initial_solution, destroy_limit, xmldata)
+# x1,  x2 = random_dayperiod_removal(initial_solution, destroy_limit, xmldata)
+# x1,  x2 = random_roomday_removal(initial_solution, destroy_limit, xmldata)
+# x1,  x2 = random_teacher_removal(initial_solution, destroy_limit, xmldata)
 
+
+
+test = 1
 
 #
 # def anneal(sol):
