@@ -2,12 +2,12 @@ import XMLtoOD
 from Entities.Penalties import Penalties
 
 
-class ObjectveFunction:
+class ObjectiveFunction:
 
-    def __init__(self, type):
+    def __init__(self, type, xmldata):
         self.type = type
         # Get data from XML File
-        xmldata = XMLtoOD.XMLData()
+        # xmldata = XMLtoOD.XMLData()
 
         # Number of available days (working days of University)
         self.days = xmldata.Days
@@ -43,20 +43,32 @@ class ObjectveFunction:
         self.rooms_count = len(self.rooms)
 
     # Objective function is sum of all penalties (which penalties is )
-    def objective_function(self, current_solution):
+    def cost(self, current_solution, course_penalties, curriculum_penalties):
         if self.type == 'UD4':
-            return (self.room_capacity_penalties(current_solution) + self.min_wdays_penalties(current_solution)
-                    + self.windows_penalties(current_solution) + self.minmax_load_penalties(current_solution)
-                    + self.double_lectures_penalties(current_solution))
-        elif self.type == 'UD2':
-            return (self.room_capacity_penalties(current_solution) + self.min_wdays_penalties(current_solution)
-                    + self.isolated_lectures_penalties(current_solution) + self.room_stability_penalties(current_solution))
+            room_capacity_penalty, course_penalties = self.room_capacity_penalties(current_solution, course_penalties)
+            min_wdays_penalty, course_penalties = self.min_wdays_penalties(current_solution, course_penalties)
+            windows_penalty, curriculum_penalties = self.windows_penalties(current_solution, curriculum_penalties)
+            minmax_load_penalty = self.minmax_load_penalties(current_solution)
+            double_lectures_penalty = self.double_lectures_penalties(current_solution)
 
+            cost = room_capacity_penalty + min_wdays_penalty + windows_penalty + minmax_load_penalty + double_lectures_penalty
+
+            return cost, course_penalties, curriculum_penalties
+
+        elif self.type == 'UD2':
+            room_capacity_penalty, course_penalties = self.room_capacity_penalties(current_solution, course_penalties)
+            min_wdays_penalty, course_penalties = self.min_wdays_penalties(current_solution, course_penalties)
+            isolated_lectures_penalty, curriculum_penalties = self.isolated_lectures_penalties(current_solution, curriculum_penalties)
+            room_stability_penalty, course_penalties = self.room_stability_penalties(current_solution, course_penalties)
+
+            cost = room_capacity_penalty + min_wdays_penalty + isolated_lectures_penalty + room_stability_penalty
+
+            return cost, course_penalties, curriculum_penalties
 
     # For each lecture, the number of students that attend the course must be less
     # than or equal the number of seats of all the rooms that host its lectures.
     # Each student above the capacity counts as 1 point of penalty.
-    def room_capacity_penalties(self, current_solution):
+    def room_capacity_penalties(self, current_solution, course_penalties):
         penalty = 0
         for i in range(self.days):
             for j in range(self.periods_per_day):
@@ -67,12 +79,15 @@ class ObjectveFunction:
                         students = int(course.Students)
                         room_size = int(self.rooms[k].Size)
                         if students - room_size > 0:
-                            penalty += (students - room_size)
-        return penalty
+                            cost = students - room_size
+                            penalty += cost
+                            course_penalties[course_id] += cost
+
+        return penalty, course_penalties
 
     # The lectures of each course must be spread into a given minimum number of days.
     # Each day below the minimum counts as 1 violation.
-    def min_wdays_penalties(self, current_solution):
+    def min_wdays_penalties(self, current_solution, course_penalties):
         penalty = 0
         for course in self.courses:
             min_days = int(course.MinDays)
@@ -90,16 +105,18 @@ class ObjectveFunction:
                     course_days += 1
 
             if course_days < min_days:
-                penalty += (min_days - course_days) * self.penalties.min_wdays_penalty
+                cost = (min_days - course_days) * self.penalties.min_wdays_penalty
+                penalty += cost
+                course_penalties[course.Id] += cost
 
-        return penalty
+        return penalty, course_penalties
 
 
     # Lectures belonging to a curriculum should not have time windows
     # (i.e., periods without teaching) between them. For a given curriculum we account for
     # a violation every time there is one windows between two lectures within the same day.
     # Each time window in a curriculum counts as many violation as its length (in periods).
-    def windows_penalties(self, current_solution):
+    def windows_penalties(self, current_solution, curriculum_penalties):
         penalty = 0
         for curriculum in self.curricula:
             for i in range(self.days):
@@ -112,12 +129,13 @@ class ObjectveFunction:
                         if current_solution[i][j][k] != 0 and curriculum.Id == current_solution[i][j][k][0]:
                             if check_for_windows:
                                 penalty += curriculum_windows - 1
+                                curriculum_penalties[curriculum.Id] += curriculum_windows - 1
                                 curriculum_windows = 0
                                 break
                             else:
                                 check_for_windows = True
                                 break
-        return penalty
+        return penalty, curriculum_penalties
 
 
     # For each curriculum the number of daily lectures should be within a given range.
@@ -180,7 +198,7 @@ class ObjectveFunction:
     # (i.e., in consecutive periods). For a given curriculum we account for a
     # violation every time there is one lecture not adjacent to any other lecture within the same day.
     # Each isolated lecture in a curriculum counts as 1 violation.
-    def isolated_lectures_penalties(self, current_solution):
+    def isolated_lectures_penalties(self, current_solution, curriculum_penalties):
         penalty = 0
         for curriculum in self.curricula:
                 for i in range(self.days):
@@ -200,18 +218,21 @@ class ObjectveFunction:
                     for l in range(self.periods_per_day):
                         if curriculum_periods[l] == 1:
                             if l == 0 and curriculum_periods[l+1] == 0:
-                                penalty += 1
+                                penalty += self.penalties.isolated_lectures_penalty
+                                curriculum_penalties[curriculum.Id] += self.penalties.isolated_lectures_penalty
                             elif l == self.periods_per_day - 1 and curriculum_periods[l-1] == 0:
                                 penalty += self.penalties.isolated_lectures_penalty
+                                curriculum_penalties[curriculum.Id] += self.penalties.isolated_lectures_penalty
                             elif curriculum_periods[l-1] == 0 and curriculum_periods[l+1] == 0:
+                                curriculum_penalties[curriculum.Id] += self.penalties.isolated_lectures_penalty
                                 penalty += self.penalties.isolated_lectures_penalty
 
-        return penalty
+        return penalty, curriculum_penalties
 
 
     # All lectures of a course should be given in the same room. Each distinct
     # room used for the lectures of a course, but the first, counts as 1 violation.
-    def room_stability_penalties(self, current_solution):
+    def room_stability_penalties(self, current_solution, course_penalties):
         penalty = 0
         for course in self.courses:
                 course_room = None
@@ -227,6 +248,7 @@ class ObjectveFunction:
                                 elif course_room != room and room not in course_rooms:
                                     course_rooms.append(room)
                                     penalty += self.penalties.room_stability_penalty
+                                    course_penalties[course.Id] + self.penalties.room_stability_penalty
 
-        return penalty
+        return penalty, course_penalties
 
