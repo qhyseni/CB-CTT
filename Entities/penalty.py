@@ -1,4 +1,4 @@
-class Penalties:
+class penalty:
 
     def __init__(self, type):
         self._type = type

@@ -1,39 +1,37 @@
-import XMLtoOD
-import ObjectiveFunction
 from random import randint
 
 
-class InitialSolution:
+class initial_solution:
 
     def __init__(self,  xmldata):
 
         # Number of available days (working days of University)
-        self.days = xmldata.Days
+        self.days = xmldata.days
 
         # Number of available periods per day (related to working hours of University)
-        self.periods_per_day = xmldata.PeriodsPerDay
+        self.periods_per_day = xmldata.periods
 
         # Number of minimum lectures that should be lectured per day (related to number of scheduled periods per day)
-        self.daily_min_lectures = xmldata.MinDailyLectures
+        self.daily_min_lectures = xmldata.min_daily_lecture
 
         # Number of maximum lectures that can be lectured per day (related to number of scheduled periods per day)
-        self.daily_max_lectures = xmldata.MaxDailyLectures
+        self.daily_max_lectures = xmldata.max_daily_lectures
 
         # List of all courses taught at the University
-        self.courses = xmldata.Courses
+        self.courses = xmldata.courses
 
         # List of rooms available for lectures at University
-        self.rooms = xmldata.Rooms
+        self.rooms = xmldata.rooms
 
         # List of curricula (programs) at University
-        self.curricula = xmldata.Curricula
+        self.curricula = xmldata.curricula
 
         # List of unavailable time slots per courses
         # teachers can pre-arrange periods when they're not available for lecturing their courses
-        self.period_constraints = xmldata.PeriodConstraints
+        self.period_constraints = xmldata.period_constraints
 
         # List of highly recommended rooms per courses
-        self.room_constraints = xmldata.RoomConstraints
+        self.room_constraints = xmldata.room_contraints
 
         self.rooms_count = len(self.rooms)
 
@@ -58,7 +56,7 @@ class InitialSolution:
             # This array will be used to store all time slots for one curriculum (group of students)
             curricula_scheduled_timeslots = []
 
-            for c in curriculum.Courses:
+            for c in curriculum.courses:
 
                 # Get one of the rooms from the room constraints, if any
                 # course_rooms = next((i for i in room_constraints if i.Course == c), None)
@@ -66,14 +64,14 @@ class InitialSolution:
                 #     room = randint(0, len(rooms) - 1)
                 # else:
                 #     r = next(i for i in course_rooms.Rooms)
-                #     room = [i for i, n in enumerate(rooms) if n.Id == r][0]
+                #     room = [i for i, n in enumerate(rooms) if n.id == r][0]
 
                 # Get Course object data for the referenced course in the curriculum
-                course = next(i for i in self.courses if i.Id == c)
+                course = next(i for i in self.courses if i.id == c)
                 # Get number of course lectures (-1 because we start counting from 0)
-                lectures_counter = int(course.Lectures)
+                lectures_counter = int(course.lectures)
 
-                # Place course lectures into solution
+                # place course lectures into solution
                 for lecture in range(lectures_counter):
 
                     while True:
@@ -83,20 +81,20 @@ class InitialSolution:
                         random_period = randint(0, periods_counter)
 
                         timeslot = [random_day, random_period]
-                        teacher_timeslot = [course.TeacherId, timeslot]
+                        teacher_timeslot = [course.teacher_id, timeslot]
 
                         # Check if current course has restricted time slots
-                        cc = next((i for i in self.period_constraints if i.Course == c), None)
+                        cc = next((i for i in self.period_constraints if i.course == c), None)
                         # If yes and current time slot is one of the time slots declared unavailable for this course
                         # Skip below steps and generate new random values
                         # This to ensure meeting this as hard constraint
-                        if cc is not None and timeslot in cc.Timeslots:
+                        if cc is not None and timeslot in cc.timeslots:
                             continue
 
                         # Ensure feasibility by checking hard constraints
                         # Check if the room is not already scheduled for the time slot
-                        # Check if the teacher is not already scheduled for the time slot
-                        # Check if the group of students is not already scheduled for the time slot
+                        # check if the teacher is not already scheduled for the time slot
+                        # check if the group of students is not already scheduled for the time slot
                         if initial_solution[random_day][random_period][random_room] == 0 \
                                 and (teacher_timeslot not in teachers_scheduled_timeslots) \
                                 and (timeslot not in curricula_scheduled_timeslots):
@@ -105,10 +103,10 @@ class InitialSolution:
                             break
 
                     # Add scheduled lecture to the initial solution
-                    initial_solution[random_day][random_period][random_room] = [curriculum.Id, course.Id, course.TeacherId]
+                    initial_solution[random_day][random_period][random_room] = [curriculum.id, course.id, course.teacher_id]
 
                     # Add scheduled time slot to this array to mark unavailability of the teacher for this time slot for future scheduling
-                    teachers_scheduled_timeslots.append([course.TeacherId, timeslot])
+                    teachers_scheduled_timeslots.append([course.teacher_id, timeslot])
 
                     # Add scheduled time slot to this array to mark unavailability of the students of this curriculum
                     # for this time slot for future scheduling
