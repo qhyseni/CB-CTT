@@ -17,8 +17,8 @@ class operators:
             a = sorted_course_penalties[index_for_removal]
             del sorted_course_penalties[index_for_removal]
 
-            for i in range(xmldata.days()):
-                for j in range(xmldata.periods()):
+            for i in range(xmldata.days):
+                for j in range(xmldata.periods):
                     for k in range(len(xmldata.rooms)):
                         lecture = schedule[i][j][k]
                         if lecture != 0 and lecture[1] == a[0]:
@@ -39,9 +39,9 @@ class operators:
             a = sorted_curriculum_penalties[index_for_removal]
             del sorted_curriculum_penalties[index_for_removal]
 
-            for i in range(xmldata.days()):
-                for j in range(xmldata.periods()):
-                    for k in range(len(xmldata.rooms())):
+            for i in range(xmldata.days):
+                for j in range(xmldata.periods):
+                    for k in range(len(xmldata.rooms)):
                         lecture = schedule[i][j][k]
                         if lecture != 0 and lecture[0] == a[0]:
                             lectures_removed.append(lecture)
@@ -51,13 +51,13 @@ class operators:
         return schedule, lectures_removed
 
     # The random destroy operator removes lectures from the schedule at random.
-    def random_lecture_removal(schedule, destroy_limit, xmldata, penalties, selection_probability):
+    def random_lecture_removal(schedule, destroy_limit, xmldata):
         lectures_removed = []
 
         while destroy_limit > 0:
-            day = randint(0, xmldata.days() - 1)
-            period = randint(0, xmldata.periods() - 1)
-            room = randint(0, len(xmldata.rooms()) - 1)
+            day = randint(0, xmldata.days- 1)
+            period = randint(0, xmldata.periods - 1)
+            room = randint(0, len(xmldata.rooms) - 1)
             if schedule[day][period][room] != 0:
                 lectures_removed.append(schedule[day][period][room])
                 schedule[day][period][room] = 0
@@ -67,13 +67,13 @@ class operators:
 
     # The random period destroy operator repetitively selects a day-period pair at random and
     # removes all its scheduled lectures
-    def random_dayperiod_removal(schedule, destroy_limit, xmldata, penalties, selection_probability):
+    def random_dayperiod_removal(schedule, destroy_limit, xmldata):
         lectures_removed = []
 
         while destroy_limit > 0:
-            day = randint(0, xmldata.days() - 1)
-            period = randint(0, xmldata.periods() - 1)
-            rooms_count = len(xmldata.rooms())
+            day = randint(0, xmldata.days - 1)
+            period = randint(0, xmldata.periods - 1)
+            rooms_count = len(xmldata.rooms)
             for k in range(rooms_count):
                 if destroy_limit == 0:
                     break
@@ -86,14 +86,14 @@ class operators:
 
     # The roomday destroy operator repetitively removes all lectures that are assigned to a randomly
     # selected room on a randomly selected day.
-    def random_roomday_removal(schedule, destroy_limit, xmldata, penalties, selection_probability):
+    def random_roomday_removal(schedule, destroy_limit, xmldata):
         lectures_removed = []
 
         while destroy_limit > 0:
-            day = randint(0, xmldata.Days - 1)
-            room = randint(0, len(xmldata.Rooms) - 1)
+            day = randint(0, xmldata.days - 1)
+            room = randint(0, len(xmldata.rooms) - 1)
 
-            for j in range(xmldata.PeriodsPerDay):
+            for j in range(xmldata.periods):
                 if destroy_limit == 0:
                     break
                 if schedule[day][j][room] != 0:
@@ -105,18 +105,18 @@ class operators:
 
     # The teacher operator is used to ease restrictions regarding teacher conflicts. Teachers are
     # randomly selected and all of their lectures are removed from the schedule.
-    def random_teacher_removal(schedule, destroy_limit, xmldata, penalties, selection_probability):
+    def random_teacher_removal(schedule, destroy_limit, xmldata):
         lectures_removed = []
 
-        teachers = list(set([o.TeacherId for o in xmldata.Courses]))
+        teachers = list(set([o.teacher_id for o in xmldata.courses]))
 
         while destroy_limit > 0:
 
             rand_teacher = random.choice(teachers)
-            rooms_count = len(xmldata.Rooms)
+            rooms_count = len(xmldata.rooms)
 
-            for i in range(xmldata.Days):
-                for j in range(xmldata.PeriodsPerDay):
+            for i in range(xmldata.days):
+                for j in range(xmldata.periods):
                     for k in range(rooms_count):
                         lecture = schedule[i][j][k]
                         if lecture != 0 and lecture[2] == rand_teacher:
@@ -129,3 +129,10 @@ class operators:
 
     ###################### End of Removal operators #############################################
 
+    ###################### Repair operators #############################################
+
+    def repair_operator(schedule, lectures_removed):
+        return schedule
+
+
+    ###################### End of Repair operators #############################################

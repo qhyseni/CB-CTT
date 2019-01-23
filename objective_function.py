@@ -54,6 +54,7 @@ class objective_function:
             curriculum_penalties[curriculum.id] = 0
 
         if self.type == 'UD4':
+
             room_capacity_penalty, course_penalties = self.room_capacity_penalties(current_solution, course_penalties)
             min_wdays_penalty, course_penalties = self.min_wdays_penalties(current_solution, course_penalties)
             windows_penalty, curriculum_penalties = self.windows_penalties(current_solution, curriculum_penalties)
