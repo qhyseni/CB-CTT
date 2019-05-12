@@ -3,7 +3,7 @@
 <instance name="Fis0506-1">
   <descriptor>
     <days value="5"/>
-    <periods_per_day value="12"/>
+    <periods_per_day value="6"/>
     <daily_lectures min="2" max="5"/>
   </descriptor>
   <courses>

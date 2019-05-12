@@ -19,14 +19,4 @@ class xml_instance:
         self.rooms = rooms
         self.curricula = curricula
         self.period_constraints = period_constraints
-        self.room_contraints = room_contraints
-
-    # days = property()
-    # periods = property()
-    # min_daily_lecture = property()
-    # max_daily_lectures = property()
-    # courses = property()
-    # rooms = property()
-    # curricula = property()
-    # period_constraints = property()
-    # room_contraints = property()
+        self.room_constraints = room_contraints

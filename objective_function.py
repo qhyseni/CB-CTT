@@ -33,7 +33,7 @@ class objective_function:
         self.period_constraints = xmldata.period_constraints
 
         # List of highly recommended rooms per courses
-        self.room_constraints = xmldata.room_contraints
+        self.room_constraints = xmldata.room_constraints
 
         # Penalty scores
         self.penalties = penalty(type)
@@ -72,6 +72,7 @@ class objective_function:
             room_stability_penalty, course_penalties = self.room_stability_penalties(current_solution, course_penalties)
 
             cost = room_capacity_penalty + min_wdays_penalty + isolated_lectures_penalty + room_stability_penalty
+            print("rc:",room_capacity_penalty, "mwd:",min_wdays_penalty, "il:",isolated_lectures_penalty, "rs:",room_stability_penalty)
 
             return cost, course_penalties, curriculum_penalties
 
@@ -85,15 +86,15 @@ class objective_function:
         for i in range(self.days):
             for j in range(self.periods_per_day):
                 for k in range(self.rooms_count):
-                    if current_solution[i][j][k] != 0:
-                        course_id = current_solution[i][j][k][1]
+                    if current_solution[i][j][k] != "":
+                        course_id = current_solution[i][j][k]
                         course = next(x for x in self.courses if x.id == course_id)
                         students = int(course.students)
                         room_size = int(self.rooms[k].size)
                         if students - room_size > 0:
-                            cost = students - room_size
-                            penalty += cost
-                            course_penalties[course_id] += cost
+                            extra_students = students - room_size
+                            penalty += extra_students
+                            course_penalties[course_id] += extra_students
 
         return penalty, course_penalties
 
@@ -110,7 +111,7 @@ class objective_function:
                 course_in_day = False
                 for j in range(self.periods_per_day):
                     for k in range(self.rooms_count):
-                        if current_solution[i][j][k] != 0 and course.id == current_solution[i][j][k][1]:
+                        if course.id == current_solution[i][j][k]:
                             course_in_day = True
                             break
                     if course_in_day:
@@ -142,8 +143,9 @@ class objective_function:
                     if check_for_windows:
                         curriculum_windows += 1
                     for k in range(self.rooms_count):
-                        if current_solution[i][j][k] != 0 and curriculum.id == current_solution[i][j][k][0]:
-                            if check_for_windows:
+                        if current_solution[i][j][k] != "":
+                            course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
+                            if check_for_windows and course is not None:
                                 penalty += curriculum_windows - 1
                                 curriculum_penalties[curriculum.id] += curriculum_windows - 1
                                 curriculum_windows = 0
@@ -166,9 +168,11 @@ class objective_function:
                 daily_lectures = 0
                 for j in range(self.periods_per_day):
                     for k in range(self.rooms_count):
-                        if current_solution[i][j][k] != 0 and curriculum.id == current_solution[i][j][k][0]:
-                            daily_lectures += 1
-                            break
+                        if current_solution[i][j][k] != "":
+                            course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
+                            if course is not None:
+                                daily_lectures += 1
+                                break
 
                 if daily_lectures > self.daily_max_lectures:
                     penalty += daily_lectures - self.daily_max_lectures
@@ -194,7 +198,7 @@ class objective_function:
                     for j in range(self.periods_per_day):
                         course_in_day = False
                         for k in range(self.rooms_count):
-                            if current_solution[i][j][k] != 0 and course.id == current_solution[i][j][k][1]:
+                            if course.id == current_solution[i][j][k]:
                                 course_in_day = True
                                 break
 
@@ -229,9 +233,11 @@ class objective_function:
                     for j in range(self.periods_per_day):
                         curriculum_in_day = False
                         for k in range(self.rooms_count):
-                            if current_solution[i][j][k] != 0 and curriculum.id == current_solution[i][j][k][0]:
-                                curriculum_in_day = True
-                                break
+                            if current_solution[i][j][k] != "":
+                                course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
+                                if course is not None:
+                                    curriculum_in_day = True
+                                    break
 
                         if curriculum_in_day:
                             curriculum_periods.append(1)
@@ -265,7 +271,7 @@ class objective_function:
                 for i in range(self.days):
                     for j in range(self.periods_per_day):
                         for k in range(self.rooms_count):
-                            if current_solution[i][j][k] != 0 and current_solution[i][j][k][1] == course.id:
+                            if current_solution[i][j][k] == course.id:
                                 room = self.rooms[k].id
                                 if course_room is None:
                                     course_room = room
@@ -273,7 +279,7 @@ class objective_function:
                                 elif course_room != room and room not in course_rooms:
                                     course_rooms.append(room)
                                     penalty += self.penalties.room_stability_penalty
-                                    course_penalties[course.id] + self.penalties.room_stability_penalty
+                                    course_penalties[course.id] += self.penalties.room_stability_penalty
 
         return penalty, course_penalties
 
