@@ -114,14 +114,12 @@ class ectt_data:
                 elif line.__contains__("ROOM_CONSTRAINTS"):
                     add_room_constraints= True
 
-        q=9
-
     def days(self):
         return int(self.raw_days)
 
     def periods(self):
         return int(self.raw_periods)
-        # return 10
+
     def min_daily_lectures(self):
         return int(self.raw_min_daily_lectures)
 

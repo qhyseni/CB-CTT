@@ -4,11 +4,11 @@ from objective_function import objective_function
 from initial_solution import initial_solution
 from roulette_wheel_selection import roulette_wheel_selection
 from simulated_annealing import simulated_annealing
-from alns_operators import operators
+from alns_destroy_operators import destroy_operators
 from Entities.xml_instance import xml_instance
+from maxSAT_repair_operator import maxSAT
 import random
 import math
-import subprocess
 import os
 import time
 
@@ -34,17 +34,21 @@ removal_operators_weights = {
     "2": 1,
     "3": 1,
     "4": 1,
-    "5": 1}
+    "5": 1,
+    "6": 1}
+
 
 # array of removal operators methods with touple of position (key) and value (method name)
 removal_operators = {
-    0: operators.worst_courses_removal,
-    1: operators.worst_curricula_removal,
-    2: operators.random_lecture_removal,
-    3: operators.random_dayperiod_removal,
-    4: operators.random_roomday_removal,
-    5: operators.random_teacher_removal
+    0: destroy_operators.worst_courses_removal,
+    1: destroy_operators.worst_curricula_removal,
+    2: destroy_operators.random_lecture_removal,
+    3: destroy_operators.random_dayperiod_removal,
+    4: destroy_operators.random_roomday_removal,
+    5: destroy_operators.random_teacher_removal,
+    6: destroy_operators.restricted_roomcourse_removal
 }
+
 
 # main function to find solution of CB-CTT instance using ALNS
 def find_optimal_solution(solution):
@@ -152,43 +156,22 @@ def neighbor(instance_data, solution, iteration, remaining_iterations,removal_op
         schedule, lectures_removed = removal_operators[removal_operator_index](solution, lectures_to_remove, instance_data)
 
     print('removed: ',len(lectures_removed))
-    try:
-        os.remove('/tmp/partial')
-    except OSError:
-        pass
-    with open('/tmp/partial', 'a+') as f:
-        print('')
-        # print solution  to console
-        for i in range(instance_data.days):
-            for j in range(instance_data.periods):
-                for k in range(len(instance_data.rooms)):
-                    if schedule[i][j][k] != "":
-                        line = schedule[i][j][k]+" "+instance_data.rooms[k].id+" " + str(i) + " "+ str(j)+'\n'
-                        f.write(line)
 
-        for lecture in lectures_removed:
-            line = lecture + " " + "-1" + " " + "-1" + " " + "-1" +'\n'
-            f.write(line)
+    lines = []
 
-    subprocess.check_output(
-                        ['java', '-jar',
-                         '/home/administrator/Documents/thesis/cb-ctt/cb-ctt.jar',
-                         '/home/administrator/Documents/thesis/datasets/comp01.ectt',
-                         '/tmp/partial',
-                         '/home/administrator/Documents/thesis/cb-ctt/output.txt',
-                         '/home/administrator/Documents/thesis/cb-ctt/Open-LinSBPS_static'])
+    for i in range(instance_data.days):
+        for j in range(instance_data.periods):
+            for k in range(len(instance_data.rooms)):
+                if schedule[i][j][k] != "":
+                    line = schedule[i][j][k] + " " + instance_data.rooms[k].id + " " + str(i) + " " + str(
+                        j) + '\n'
+                    lines.append(line)
 
-    schedule =  [[["" for k in range(len(instance_data.rooms))] for j in range(instance_data.periods)] for i in range(instance_data.days)]
-    with open('/home/administrator/Documents/thesis/cb-ctt/output.txt', "r") as content:
-        for line in content:
-            values = line.rstrip('\n').split(' ')
-            if values != ['']:
-                day = int(values[2])
-                period = int(values[3])
-                room = instance_data.rooms.index(next((i for i in instance_data.rooms if i.id == values[1]), None))
-                schedule[day][period][room] = values[0]
+    for lecture in lectures_removed:
+        line = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
+        lines.append(line)
 
-
+    schedule = maxSAT.solve(instance_data, lines)
 
     return schedule
 

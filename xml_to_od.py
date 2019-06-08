@@ -8,7 +8,7 @@ from Entities import course, room, curriculum, constraints
 class xml_data:
 
     def __init__(self):
-        tree = ET.parse('Files/comp01.xml')
+        tree = ET.parse('Files/comp04.xml')
         self.root = tree.getroot()
 
     def days(self):

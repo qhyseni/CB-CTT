@@ -15,10 +15,8 @@ class roulette_wheel_selection:
 
     # Simulation of wheel rotation where the element with highest fitness/probability get the higher chance to get selected
     def spin_roulettewheel(probabilities):
-        slot_count = len(probabilities)
-        randno = random.randint(0, 10000)
-        rot_degree = randno % 360
-        rot_unit = 360 / slot_count
-        rol_no = (rot_degree - (rot_degree % (rot_unit))) / rot_unit
-        rol_value = probabilities[int(rol_no)]
-        return int(rol_no)
+
+        r = random.random()
+        for i in range(len(probabilities)):
+            if r <= probabilities[i]:
+                return i

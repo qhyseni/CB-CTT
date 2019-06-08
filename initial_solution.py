@@ -1,37 +1,38 @@
 from random import randint
-
+from maxSAT_repair_operator import maxSAT
 
 class initial_solution:
 
-    def __init__(self,  xmldata):
+    def __init__(self, instance_data):
 
+        self.instance_data = instance_data
         # Number of available days (working days of University)
-        self.days = xmldata.days
+        self.days = instance_data.days
 
         # Number of available periods per day (related to working hours of University)
-        self.periods_per_day = xmldata.periods
+        self.periods_per_day = instance_data.periods
 
         # Number of minimum lectures that should be lectured per day (related to number of scheduled periods per day)
-        self.daily_min_lectures = xmldata.min_daily_lecture
+        self.daily_min_lectures = instance_data.min_daily_lecture
 
         # Number of maximum lectures that can be lectured per day (related to number of scheduled periods per day)
-        self.daily_max_lectures = xmldata.max_daily_lectures
+        self.daily_max_lectures = instance_data.max_daily_lectures
 
         # List of all courses taught at the University
-        self.courses = xmldata.courses
+        self.courses = instance_data.courses
 
         # List of rooms available for lectures at University
-        self.rooms = xmldata.rooms
+        self.rooms = instance_data.rooms
 
         # List of curricula (programs) at University
-        self.curricula = xmldata.curricula
+        self.curricula = instance_data.curricula
 
         # List of unavailable time slots per courses
         # teachers can pre-arrange periods when they're not available for lecturing their courses
-        self.period_constraints = xmldata.period_constraints
+        self.period_constraints = instance_data.period_constraints
 
         # List of highly recommended rooms per courses
-        self.room_constraints = xmldata.room_constraints
+        self.room_constraints = instance_data.room_constraints
 
         self.rooms_count = len(self.rooms)
 
@@ -85,25 +86,29 @@ class initial_solution:
                 timeslots = pc.timeslots
             else:
                 timeslots = None
-            initial_solution = self.schedule_course(cs[0], initial_solution, timeslots)
 
-        # To sort the list in place...
-        # self.period_constraints = sorted(self.period_constraints , key=lambda c: len(c.timeslots), reverse=True)
-        # for pc in self.period_constraints:
-        #     course = next((i for i in self.courses if i.id == pc.course), None)
-        #     initial_solution = self.schedule_course(course, initial_solution, pc.timeslots)
-        #
-        # for course in self.courses:
-        #     pc = next((i for i in self.period_constraints if i.course == course.id), None)
-        #     if pc is None:
-        #         initial_solution = self.schedule_course(course, initial_solution, None)
+            initial_solution, generate_with_maxsat = self.schedule_course(cs[0], initial_solution, timeslots)
 
+            if generate_with_maxsat:
+                break
+
+        if generate_with_maxsat:
+            lines = []
+            for course in self.courses:
+                lectures_counter = int(course.lectures)
+                # place course lectures into solution
+                for lecture in range(lectures_counter):
+                    line = course.id + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
+                    lines.append(line)
+
+            initial_solution = maxSAT.solve(self.instance_data, lines)
 
         print("solution", initial_solution)
         return initial_solution
 
     def schedule_course(self, course, initial_solution, constrained_timeslots):
 
+        generate_with_maxsat = False
 
         course_curricula = []
 
@@ -112,13 +117,17 @@ class initial_solution:
             if curriculum_course is not None:
                 course_curricula.append(curriculum.id)
 
-
         lectures_counter = int(course.lectures)
-
         # place course lectures into solution
         for lecture in range(lectures_counter):
-
+            counter = 0
             while True:
+
+                if counter == 100:
+                    generate_with_maxsat = True
+                    break
+
+                counter += 1
 
                 # Generate random day/period/room based on respective ranges
                 random_room = randint(0, self.rooms_max_range)
@@ -166,6 +175,9 @@ class initial_solution:
                     # it will repeat random value assignments until the conditions met and the loop breaks
                     break
 
+            if generate_with_maxsat:
+                break
+
             # Add scheduled time slot to this array to mark unavailability of the teacher for this timeslot
             # for future scheduling
             self.teachers_scheduled_timeslots.append(teacher_timeslot)
@@ -178,7 +190,7 @@ class initial_solution:
             # Add scheduled lecture to the initial solution
             initial_solution[random_day][random_period][random_room] = course.id
 
-        return initial_solution
+        return initial_solution, generate_with_maxsat
 
 
 
