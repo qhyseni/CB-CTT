@@ -1,12 +1,13 @@
 from random import randint
 import random
 import math
+from parameters import parameters
 
 class destroy_operators:
 
     ###################### Removal operators #############################################
 
-    def worst_courses_removal(schedule, destroy_limit, instance_data, penalties, selection_probability):
+    def worst_courses_removal(schedule, destroy_limit, instance_data, penalties):
         print('worst_courses_removal')
         lectures_removed = []
 
@@ -14,12 +15,12 @@ class destroy_operators:
         while destroy_limit > 0:
             courses_count = len(sorted_course_penalties)
             upsilon = random.random()
-            index_for_removal = math.floor(courses_count * (upsilon ** selection_probability))
+            index_for_removal = math.floor(courses_count * (upsilon ** parameters.selection_probability))
             a = sorted_course_penalties[index_for_removal]
             del sorted_course_penalties[index_for_removal]
 
             for i in range(instance_data.days):
-                for j in range(instance_data.periods):
+                for j in range(instance_data.periods_per_day):
                     for k in range(len(instance_data.rooms)):
                         lecture = schedule[i][j][k]
                         if lecture == a[0]:
@@ -29,7 +30,7 @@ class destroy_operators:
 
         return schedule, lectures_removed
 
-    def worst_curricula_removal(schedule, destroy_limit, instance_data, penalties, selection_probability):
+    def worst_curricula_removal(schedule, destroy_limit, instance_data, penalties):
         print('worst_curricula_removal')
         lectures_removed = []
 
@@ -37,12 +38,12 @@ class destroy_operators:
         while destroy_limit > 0:
             curricula_count = len(sorted_curriculum_penalties)
             upsilon = random.random()
-            index_for_removal = math.floor(curricula_count * (upsilon ** selection_probability))
+            index_for_removal = math.floor(curricula_count * (upsilon ** parameters.selection_probability))
             a = sorted_curriculum_penalties[index_for_removal]
             del sorted_curriculum_penalties[index_for_removal]
 
             for i in range(instance_data.days):
-                for j in range(instance_data.periods):
+                for j in range(instance_data.periods_per_day):
                     for k in range(len(instance_data.rooms)):
                         lecture = schedule[i][j][k]
                         if lecture != "":
@@ -62,7 +63,7 @@ class destroy_operators:
 
         while destroy_limit > 0:
             day = randint(0, instance_data.days- 1)
-            period = randint(0, instance_data.periods - 1)
+            period = randint(0, instance_data.periods_per_day - 1)
             room = randint(0, len(instance_data.rooms) - 1)
             if schedule[day][period][room] != "":
                 lectures_removed.append(schedule[day][period][room])
@@ -79,7 +80,7 @@ class destroy_operators:
 
         while destroy_limit > 0:
             day = randint(0, instance_data.days - 1)
-            period = randint(0, instance_data.periods - 1)
+            period = randint(0, instance_data.periods_per_day - 1)
             rooms_count = len(instance_data.rooms)
             for k in range(rooms_count):
                 if destroy_limit == 0:
@@ -101,7 +102,7 @@ class destroy_operators:
             day = randint(0, instance_data.days - 1)
             room = randint(0, len(instance_data.rooms) - 1)
 
-            for j in range(instance_data.periods):
+            for j in range(instance_data.periods_per_day):
                 if destroy_limit == 0:
                     break
                 if schedule[day][j][room] != "":
@@ -122,7 +123,7 @@ class destroy_operators:
         for rc in instance_data.room_constraints:
             for room in rc.rooms:
                 for i in range(instance_data.days):
-                    for j in range(instance_data.periods):
+                    for j in range(instance_data.periods_per_day):
                         for k in range(rooms_count):
                             if destroy_limit == 0:
                                 return schedule, lectures_removed
@@ -150,7 +151,7 @@ class destroy_operators:
             rooms_count = len(instance_data.rooms)
 
             for i in range(instance_data.days):
-                for j in range(instance_data.periods):
+                for j in range(instance_data.periods_per_day):
                     for k in range(rooms_count):
                         lecture = schedule[i][j][k]
                         if lecture != "":

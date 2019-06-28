@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from Entities import course, room, curriculum, constraints
+from configs import configs
 
 
 # Convert data from XML instances to object properties
@@ -21,9 +22,9 @@ class ectt_data:
         add_unavailability_constraints = False
         add_room_constraints = False
 
-        with open('/home/administrator/Downloads/CB-CTT_Solver-master/Course timetabling solver/datasets/comp01.ectt', 'rU') as f:
+        with open(configs.datasets_dir+configs.instance_name, 'rU') as f:
             for line in f:
-                print(line)
+                # print(line)
                 line = line.rstrip("\n")
 
                 if line.__contains__("Days"):
@@ -101,7 +102,6 @@ class ectt_data:
                         rc = [line_array[0], line_array[1]]
 
                         self.raw_room_contraints.append(rc)
-
 
                 elif line.__contains__("COURSES"):
                     add_courses = True

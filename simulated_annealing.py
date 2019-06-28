@@ -1,7 +1,7 @@
 from random import randint
 import math
 import random
-
+from parameters import parameters
 
 class simulated_annealing:
 
@@ -9,11 +9,7 @@ class simulated_annealing:
 
         # SA: initially accept 4% worse solution than the initial solution with a probability of 50%
 
-        init_deterioriation = 0.04
-        initial_acceptance = 0.5
-
-        self.temperature = - init_deterioriation / math.log(initial_acceptance) * solution_cost
-        self.temperature_min = 0.1
+        self.temperature = - parameters.init_deterioriation / math.log(parameters.initial_acceptance) * solution_cost
 
     def accept_new_solution(self, new_cost, old_cost, remaining_iterations):
 
@@ -22,7 +18,7 @@ class simulated_annealing:
         accepted = True if acceptance_prob > random.uniform(0, 1) else False
 
         # cool down the temperature
-        cooling_rate = (self.temperature_min / self.temperature) ** (1 / remaining_iterations)
+        cooling_rate = (parameters.temperature_min / self.temperature) ** (1 / remaining_iterations)
         self.temperature *= cooling_rate
 
         return accepted
