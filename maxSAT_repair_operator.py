@@ -39,7 +39,6 @@ class maxSAT:
             rc = process.wait()
             logfile.flush()
 
-            time.sleep(2)
             # print('rc:'+str(rc))
             print('maxSAT process END')
 
@@ -55,6 +54,7 @@ class maxSAT:
                     room = instance_data.rooms.index(next((i for i in instance_data.rooms if i.id == values[1]), None))
                     schedule[day][period][room] = values[0]
 
+        os.remove(configs.cbctt_dir + configs.output_name)
         print('maxSAT Output file read END')
         return schedule
 
