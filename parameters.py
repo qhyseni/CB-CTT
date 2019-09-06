@@ -9,12 +9,12 @@ class parameters:
     w2 = 15  # score for accepted
     w3 = 18  # score for better than current solution
 
-    # time_limit = 480 # execution time for ALNS
-    # iteration_limit = 200000 # iteraions limit for ALNS
+    time_limit = 480 # execution time for ALNS
+    iteration_limit = 200000 # iteraions limit for ALNS
 
 
-    time_limit = 50 # execution time for ALNS
-    iteration_limit = 200 # iteraions limit for ALNS
+    # time_limit = 25 # execution time for ALNS
+    # iteration_limit = 100 # iteraions limit for ALNS
 
     # SA: initially accept 4% worse solution than the initial solution with a probability of 50%
 

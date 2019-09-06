@@ -68,55 +68,58 @@ class alns:
     
         iteration = 0
 
-        print('ALNS main exec START')
+        # print('ALNS main exec START')
         while (time.time() - time_start) < parameters.time_limit:
-
+            print("alns iteration: ", iteration)
             iteration += 1
-            remaining_iterations = parameters.iteration_limit - ((time.time()-time_start)/parameters.time_limit)*parameters.iteration_limit
+            remaining_iterations = parameters.iteration_limit - ((time.time()-time_start)/parameters.time_limit) * parameters.iteration_limit
 
             removal_operators_probabilities = roulette_wheel_selection.get_probability_list(self.removal_operators_weights)
             removal_operator_index = roulette_wheel_selection.spin_roulettewheel(removal_operators_probabilities)
     
             # Find neighbor solution by applying destruction/repair operator to the current solution
             new_sol = self.neighbor(solution, iteration, remaining_iterations, removal_operator_index, course_penalties, curriculum_penalties)
-    
-            # Calculate the new solution's cost
-            new_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(new_sol)
-    
-            # The acceptance probability function takes in the old cost, new cost, and current temperature
-            # and spits out a number between 0 and 1, which is a sort of recommendation on whether or not to jump to the new solution.
-            accept = SA.accept_new_solution(new_cost, current_cost, remaining_iterations)
-    
-            score_w1 = 0
-            score_w2 = 0
-            score_w3 = 0
-    
-            if accept:
-                solution = new_sol
-                current_cost = new_cost
-                if new_cost > current_cost: # worse than current solution
-                    score_w3 = parameters.w3
-                else: # better than current solution
-                    score_w2 = parameters.w2
-    
-            if new_cost > global_best_cost:
-                global_best = new_sol
-                global_best_cost = new_cost
-                score_w1 = parameters.w1
-    
-            psi = max(score_w1, score_w2, score_w3)
-            lambda_param = 0.8
-    
-            # recalcuate weights of removal operators based on the accepted solution
-            self.removal_operators_weights[str(removal_operator_index)] = lambda_param * self.removal_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
 
-        print('ALNS main exec END')
+            if new_sol is not None:
+                # Calculate the new solution's cost
+                new_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(new_sol)
+
+                # The acceptance probability function takes in the old cost, new cost, and current temperature
+                # and spits out a number between 0 and 1, which is a sort of recommendation on whether or not to jump to the new solution.
+                accept = SA.accept_new_solution(new_cost, current_cost, remaining_iterations)
+
+                score_w1 = 0
+                score_w2 = 0
+                score_w3 = 0
+
+                if accept:
+                    solution = new_sol
+                    current_cost = new_cost
+                    if new_cost > current_cost: # worse than current solution
+                        score_w3 = parameters.w3
+                    else: # better than current solution
+                        score_w2 = parameters.w2
+
+                if new_cost < global_best_cost:
+                    global_best = new_sol
+                    global_best_cost = new_cost
+                    score_w1 = parameters.w1
+
+                psi = max(score_w1, score_w2, score_w3)
+                lambda_param = 0.8
+
+                # recalcuate weights of removal operators based on the accepted solution
+                self.removal_operators_weights[str(removal_operator_index)] = lambda_param * self.removal_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
+
+            else:
+                print("None")
+        # print('ALNS main exec END')
         print('===============================\n')
         print(global_best_cost)
         print('===============================\n')
         return global_best, global_best_cost
     
-    def neighbor(self, solution, iteration, remaining_iterations,removal_operator_index, courses_penalties, curricula_penalties):
+    def neighbor(self, solution, iteration, remaining_iterations, removal_operator_index, courses_penalties, curricula_penalties):
     
         lectures_counter = 0
         for course in self.instance_data.courses:
@@ -135,12 +138,12 @@ class alns:
     
         destroy_limit = math.floor(reference_destroy_limit
                                    - math.pow(iteration, math.log((((parameters.destroy_decrease_parameter - 1)
-                                                                    /parameters.destroy_decrease_parameter)
-                                                                   *reference_destroy_limit), expected_iteration_limit)))
+                                                                    / parameters.destroy_decrease_parameter)
+                                                                   * reference_destroy_limit), expected_iteration_limit)))
         print('destroy limit', destroy_limit)
     
         lectures_to_remove = random.randint(1, destroy_limit)
-        print('lectures_to_remove', lectures_to_remove)
+        # print('lectures_to_remove', lectures_to_remove)
     
     
         if removal_operator_index == 0:
@@ -150,7 +153,7 @@ class alns:
         else:
             schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
     
-        print('removed: ',len(lectures_removed))
+        # print('\nremoved: ',len(lectures_removed))
     
         lines = []
     

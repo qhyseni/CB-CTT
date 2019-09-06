@@ -25,7 +25,7 @@ class initial_solution:
         # The scheduling of course lectures will be done by placing each course lecture of each curriculum
         # into time slot / room pair. Generation of Initial solution will be randomly
 
-        print('initial solution generate randomly START')
+        # print('initial solution generate randomly START')
         courses_scores = []
         for c in self.instance_data.courses:
 
@@ -64,7 +64,7 @@ class initial_solution:
             if generate_with_maxsat:
                 break
 
-        print('initial solution generate randomly END')
+        # print('initial solution generate randomly END')
 
         if generate_with_maxsat:
 
@@ -79,7 +79,7 @@ class initial_solution:
 
             initial_solution = maxSAT.solve(self.instance_data, lines)
 
-            print('initial solution generate with maxSAT END')
+            # print('initial solution generate with maxSAT END')
         # print("solution", initial_solution)
         return initial_solution
 
