@@ -32,20 +32,22 @@ row = 0
 for param_value in w1:
     parameters.w1 = param_value
 
-    print('\nINSTANCE' + configs.instance_name +'\n')
+    for instance in instances:
+        configs.instance_name = instance + ".ectt"
+        print('\nINSTANCE' + configs.instance_name +'\n')
 
-    for i in range(0, 10):
-        row = row + 1
-        print(i)
-        alns_instance = alns()
-        start_time = time.time()
-        schedule, cost = alns_instance.execute()
-        end_time = time.time()
-        exec_time = end_time - start_time
+        for i in range(0, 5):
+            row = row + 1
+            print(i)
+            alns_instance = alns()
+            start_time = time.time()
+            schedule, cost = alns_instance.execute()
+            end_time = time.time()
+            exec_time = end_time - start_time
 
-        ws.write(row, 0, param_value)
-        ws.write(row, 1, cost)
-        ws.write(row, 2, exec_time)
+            ws.write(row, 0, param_value)
+            ws.write(row, 1, cost)
+            ws.write(row, 2, exec_time)
 
-    wb.save('experiments_single.xls')
+            wb.save('experiments_single.xls')
 

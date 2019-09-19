@@ -15,11 +15,10 @@ instances = [
 ]
 
 
-TL = [50, 100, 250, 500, 1000, 2000, 4000, 6000, 8000, 10000]
+TL = [50, 100, 250, 500, 1000, 2000, 5000, 10000, 15000, 20000]
 
 # ------------ w1 parameter tuning ------------- #
 
-configs.instance_name = "comp02.ectt"
 
 wb = xlwt.Workbook()
 
@@ -29,27 +28,30 @@ ws.write(0, 0, "TL")
 ws.write(0, 1, "Cost")
 ws.write(0, 2, "Time")
 
-row = 0
-for param_value in TL:
+for instance in instances:
+    configs.instance_name = instance + ".ectt"
+    print('INSTANCE' + configs.instance_name + '\n')
 
-    print("\nTL: ", param_value)
+    row = 0
 
-    parameters.time_limit = param_value
+    for param_value in TL:
 
-    print('INSTANCE' + configs.instance_name +'\n')
+        print("\nTL: ", param_value)
 
-    for i in range(0, 5):
-        row = row + 1
-        print(i)
-        alns_instance = alns()
-        start_time = time.time()
-        schedule, cost = alns_instance.execute()
-        end_time = time.time()
-        exec_time = end_time - start_time
+        parameters.time_limit = param_value
 
-        ws.write(row, 0, param_value)
-        ws.write(row, 1, cost)
-        ws.write(row, 2, exec_time)
+        for i in range(0, 5):
+            row = row + 1
+            print(i)
+            alns_instance = alns()
+            start_time = time.time()
+            schedule, cost = alns_instance.execute()
+            end_time = time.time()
+            exec_time = end_time - start_time
 
-        wb.save('experiments_TL' + configs.instance_name + '.xls')
+            ws.write(row, 0, param_value)
+            ws.write(row, 1, cost)
+            ws.write(row, 2, exec_time)
+
+            wb.save('experiments_TL' + configs.instance_name + '.xls')
 
