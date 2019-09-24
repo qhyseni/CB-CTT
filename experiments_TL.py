@@ -7,9 +7,16 @@ import random
 
 import time
 instances = [
-            'comp01', 'comp02',
-            'comp03', 'comp04', 'comp05',
-             'comp06', 'comp07', 'comp08', 'comp09','comp10'
+            'comp01',
+    # 'comp02',
+            'comp03',
+    # 'comp04',
+    'comp05',
+             # 'comp06',
+    'comp07',
+    # 'comp08',
+    'comp09'
+    # ,'comp10'
              # 'comp11', 'comp12','comp13', 'comp14', 'comp15',
              # 'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21'
 ]
