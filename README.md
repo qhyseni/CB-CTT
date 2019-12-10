@@ -69,4 +69,4 @@ Parameters are configured to their optimal values in <i>parameters.py</i> file, 
 
 ## Instances format
 
-The program should work with two instances format, <b><xml></b> and <b>ectt</b> .
+The program should work with two instances format, <b>xml</b> and <b>ectt</b> .
