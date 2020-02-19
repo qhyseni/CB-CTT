@@ -2,6 +2,7 @@ from random import randint
 from maxSAT_repair_operator import maxSAT
 
 
+
 class initial_solution:
 
     def __init__(self, instance_data):

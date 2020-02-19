@@ -5,6 +5,7 @@ from initial_solution import initial_solution
 from roulette_wheel_selection import roulette_wheel_selection
 from simulated_annealing import simulated_annealing
 from alns_destroy_operators import destroy_operators
+from alns_repair_operators import repair_operators
 from Entities.xml_instance import xml_instance
 from maxSAT_repair_operator import maxSAT
 import random
@@ -15,7 +16,8 @@ import xlsxwriter
 from parameters import parameters
 from configs import configs
 from Entities.instance import instance
-
+from MIP_V2_repair_operator import mip_operator
+from itertools import product
 
 class alns:
 
@@ -152,34 +154,63 @@ class alns:
             schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, curricula_penalties)
         else:
             schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
-    
+
+
+        schedule = repair_operators.two_stage_repair_operator(schedule, lectures_removed, self.instance_data)
         # print('\nremoved: ',len(lectures_removed))
     
-        lines = []
-    
-        for i in range(self.instance_data.days):
-            for j in range(self.instance_data.periods_per_day):
-                for k in range(self.instance_data.rooms_count):
-                    if schedule[i][j][k] != "":
-                        line = schedule[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(
-                            j) + '\n'
-                        lines.append(line)
-    
-        for lecture in lectures_removed:
-            line = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
-            lines.append(line)
-    
-        schedule = maxSAT.solve(self.instance_data, lines)
+        # lines = []
+        #
+        # for i in range(self.instance_data.days):
+        #     for j in range(self.instance_data.periods_per_day):
+        #         for k in range(self.instance_data.rooms_count):
+        #             if schedule[i][j][k] != "":
+        #                 line = schedule[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(
+        #                     j) + '\n'
+        #                 lines.append(line)
+        #
+        # for lecture in lectures_removed:
+        #     line = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
+        #     lines.append(line)
+        #
+        # schedule = maxSAT.solve(self.instance_data, lines)
 
         return schedule
     
     def execute(self):
         
         # Generate initial solution
+
         initial_solution_instance = initial_solution(self.instance_data)
-        
+
         init_sol = initial_solution_instance.generate_solution()
-        
+
+        # # MIP TESTS
+        #
+        # initial_solution = [[["" for k in range(len(self.instance_data.rooms))] for j in range(self.instance_data.periods_per_day)] for i in range(self.instance_data.days)]
+        #
+        # mip_instance = mip_operator(self.instance_data)
+        #
+        # result = mip_instance.repair()
+        #
+        # for c in range(len(self.instance_data.courses)):
+        #     for d in range(int(self.instance_data.days)):
+        #         for p in range(int(self.instance_data.periods_per_day)):
+        #             for r in range(int(self.instance_data.rooms_count)):
+        #                 if result[c][d][p][r].x > 0.99:
+        #                     initial_solution[d][p][r] = self.instance_data.courses[c].id
+        #
+        # print('qendresa',' init sol', initial_solution)
+        #
+        # obj_func_instance = objective_function("UD2", self.instance_data)
+        #
+        # # # Calculate cost/objective function of current solution
+        # current_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(init_sol)
+        # qendresa = current_cost
+        # print('INITIAL SOLUTION COST: ', current_cost)
+        #
+        # # END MIP TESTS
+
         # try:
         #     os.remove('/tmp/initial_solution')
         # except OSError:
@@ -193,6 +224,7 @@ class alns:
         #                     line = init_sol[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
         #                     f.write(line)
         #
+
         schedule, cost = self.find_optimal_solution(init_sol)
 
         print('success')

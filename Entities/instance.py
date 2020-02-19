@@ -31,3 +31,14 @@ class instance:
         self.room_constraints = raw_data.room_contraints()
 
         self.rooms_count = len(self.rooms)
+
+        self.teachers = self.get_teachers()
+
+    def get_teachers(self):
+        teachers = []
+        for c in self.courses:
+            if c.teacher_id not in teachers:
+                teachers.append(c.teacher_id)
+
+        return teachers
+

@@ -67,6 +67,8 @@ class objective_function:
                             extra_students = students - room_size
                             penalty += extra_students
                             course_penalties[course_id] += extra_students
+                            # print('ROOM CAPACITY ,c,d,p,r,students,room size', current_solution[i][j][k],i,j,k,students,room_size)
+
 
         # print('room_capacity_penalties END')
         return penalty, course_penalties
@@ -97,6 +99,7 @@ class objective_function:
                 cost = (min_days - course_days) * self.penalties.min_wdays_penalty
                 penalty += cost
                 course_penalties[course.id] += cost
+                # print('MIN WORKING DAYS,c,number of days,penalty', course.id, (min_days - course_days), cost)
 
         # print('min_wdays_penalties END')
         return penalty, course_penalties
@@ -230,6 +233,8 @@ class objective_function:
                         if curriculum_periods[l] == 1:
                             if l == 0 and curriculum_periods[l+1] == 0:
                                 penalty += self.penalties.isolated_lectures_penalty
+
+                                # print('ISOLATED LECTURES,d,p,penalty', i,l, penalty)
                                 curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
                             elif l == self.instance_data.periods_per_day - 1 and curriculum_periods[l-1] == 0:
                                 penalty += self.penalties.isolated_lectures_penalty
@@ -264,6 +269,8 @@ class objective_function:
                                     course_rooms.append(room)
                                     penalty += self.penalties.room_stability_penalty
                                     course_penalties[course.id] += self.penalties.room_stability_penalty
+
+                                    # print('ROOM STABILITY ,c,d,p,r', current_solution[i][j][k], i, j,k)
 
         # print('room_stability_penalties END')
         return penalty, course_penalties

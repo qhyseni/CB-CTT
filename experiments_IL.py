@@ -6,20 +6,21 @@ from alns import alns
 import random
 
 import time
-instances = [
-            'comp01', 'comp02',
-            'comp03', 'comp04', 'comp05',
-             'comp06', 'comp07', 'comp08', 'comp09','comp10',
-             'comp11', 'comp12','comp13', 'comp14', 'comp15',
-             'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
+# instances = [
+#             'comp01', 'comp02',
+#             'comp03', 'comp04', 'comp05',
+#              'comp06', 'comp07', 'comp08', 'comp09','comp10',
+#              'comp11', 'comp12','comp13', 'comp14', 'comp15',
+#              'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
+#
 
-
+instances = ['comp01']
 # IL = [50, 100, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12000]
 IL = [6000, 8000, 12000, 20000]
 
 # ------------ w1 parameter tuning ------------- #
 
-configs.instance_name = "comp02.ectt"
+configs.instance_name = "comp01.ectt"
 
 wb = xlwt.Workbook()
 
