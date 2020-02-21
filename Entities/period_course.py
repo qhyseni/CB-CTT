@@ -1,4 +1,5 @@
 class period_course:
+
     def __init__(self, day, period, course):
         self.day = day
         self.period = period
