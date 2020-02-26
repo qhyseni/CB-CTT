@@ -233,8 +233,7 @@ class repair_operators:
             # =================================================================
             # if we are not able to assign course to any period, we apply Backtracking
             # Backtracking will consider to remove only the lectures that are assigned during the repairing phase
-            # if len(Pc) == 0:
-            if len(period_lecture_assignments) > 10:
+            if len(Pc) == 0:
                 period_lecture_assignments, removed_lectures, forbidden_lectures = repair_operators.backtrack_repairing(schedule,
                                                                                                        instance_data,
                                                                                                        course,
@@ -299,8 +298,8 @@ class repair_operators:
     def two_stage_repair_operator(schedule, unscheduled_lectures, instance_data):
         period_lecture_assignments = repair_operators.assign_lecture_to_period(schedule, unscheduled_lectures, instance_data)
         schedule = repair_operators.assign_lecture_to_room(schedule, unscheduled_lectures, instance_data, period_lecture_assignments, 1)
-        return schedule
         print('FINAL SCHEDULE: ', schedule)
+        return schedule
 
     def assign_lecture_to_room(schedule, unscheduled_lectures, instance_data, period_lecture_assignments, type):
 
