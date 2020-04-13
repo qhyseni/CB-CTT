@@ -50,6 +50,20 @@ class alns:
             5: destroy_operators.random_teacher_removal,
             6: destroy_operators.restricted_roomcourse_removal
         }
+
+        # Initial weights of repair operators set to 1
+        self.repair_operators_weights = {
+            "0": 1,
+            "1": 1,
+            "2": 1}
+
+
+        # array of repair operators methods with touple of position (key) and value (method name)
+        self.repair_operators = {
+            0: repair_operators.two_stage_repair_operator,
+            1: repair_operators.one_stage_repair_operator,
+            2: maxSAT.solve
+        }
     
     # main function to find solution of CB-CTT instance using ALNS
     def find_optimal_solution(self, solution):
@@ -78,9 +92,12 @@ class alns:
 
             removal_operators_probabilities = roulette_wheel_selection.get_probability_list(self.removal_operators_weights)
             removal_operator_index = roulette_wheel_selection.spin_roulettewheel(removal_operators_probabilities)
+
+            repair_operators_probabilities = roulette_wheel_selection.get_probability_list(self.repair_operators_weights)
+            repair_operator_index = roulette_wheel_selection.spin_roulettewheel(repair_operators_probabilities)
     
             # Find neighbor solution by applying destruction/repair operator to the current solution
-            new_sol = self.neighbor(solution, iteration, remaining_iterations, removal_operator_index, course_penalties, curriculum_penalties)
+            new_sol = self.neighbor(solution, iteration, remaining_iterations, removal_operator_index, repair_operator_index, course_penalties, curriculum_penalties)
 
             if new_sol is not None:
                 # Calculate the new solution's cost
@@ -112,6 +129,7 @@ class alns:
 
                 # recalcuate weights of removal operators based on the accepted solution
                 self.removal_operators_weights[str(removal_operator_index)] = lambda_param * self.removal_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
+                self.repair_operators_weights[str(repair_operator_index)] = lambda_param * self.repair_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
 
             else:
                 print("None")
@@ -121,7 +139,7 @@ class alns:
         print('===============================\n')
         return global_best, global_best_cost
     
-    def neighbor(self, solution, iteration, remaining_iterations, removal_operator_index, courses_penalties, curricula_penalties):
+    def neighbor(self, solution, iteration, remaining_iterations, removal_operator_index, repair_operator_index, courses_penalties, curricula_penalties):
     
         lectures_counter = 0
         for course in self.instance_data.courses:
