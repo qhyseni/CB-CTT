@@ -5,8 +5,8 @@ import random
 class roulette_wheel_selection:
 
     # we can create a probability list (imaginary proportion of the wheel)
-    def get_probability_list(removal_operators_weights):
-        fitness = removal_operators_weights.values()
+    def get_probability_list(weights):
+        fitness = weights.values()
         total_fit = float(sum(fitness))
         relative_fitness = [f / total_fit for f in fitness]
         probabilities = [sum(relative_fitness[:i + 1])

@@ -15,13 +15,14 @@ import time
 import xlsxwriter
 from parameters import parameters
 from configs import configs
+from operators_lookup import operators_lookup
 from Entities.instance import instance
-from MIP_V2_repair_operator import mip_operator
 from itertools import product
 
 class alns:
 
     def __init__(self):
+
         # Get data from instance file
         if configs.instance_type == 1:
             raw_data = xml_to_od.xml_data()
@@ -30,41 +31,7 @@ class alns:
 
         self.instance_data = instance(raw_data)
 
-        # Initial weights of removal operators set to 1
-        self.removal_operators_weights = {
-            "0": 1,
-            "1": 1,
-            "2": 1,
-            "3": 1,
-            "4": 1,
-            "5": 1,
-            "6": 1}
 
-        # array of removal operators methods with touple of position (key) and value (method name)
-        self.removal_operators = {
-            0: destroy_operators.worst_courses_removal,
-            1: destroy_operators.worst_curricula_removal,
-            2: destroy_operators.random_lecture_removal,
-            3: destroy_operators.random_dayperiod_removal,
-            4: destroy_operators.random_roomday_removal,
-            5: destroy_operators.random_teacher_removal,
-            6: destroy_operators.restricted_roomcourse_removal
-        }
-
-        # Initial weights of repair operators set to 1
-        self.repair_operators_weights = {
-            "0": 1,
-            "1": 1,
-            "2": 1}
-
-
-        # array of repair operators methods with touple of position (key) and value (method name)
-        self.repair_operators = {
-            0: repair_operators.two_stage_repair_operator,
-            1: repair_operators.one_stage_repair_operator,
-            2: maxSAT.solve
-        }
-    
     # main function to find solution of CB-CTT instance using ALNS
     def find_optimal_solution(self, solution):
     
@@ -73,7 +40,7 @@ class alns:
         current_best = solution
     
         # Calculate cost/objective function of current solution
-        current_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(solution)
+        current_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(solution)
     
         global_best = current_best
         global_best_cost = current_cost
@@ -86,22 +53,39 @@ class alns:
 
         # print('ALNS main exec START')
         while (time.time() - time_start) < parameters.time_limit:
+
             print("alns iteration: ", iteration)
+
             iteration += 1
             remaining_iterations = parameters.iteration_limit - ((time.time()-time_start)/parameters.time_limit) * parameters.iteration_limit
 
-            removal_operators_probabilities = roulette_wheel_selection.get_probability_list(self.removal_operators_weights)
+            # -------------------------------------------------------------------------------------------------------------------- #
+            removal_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.removal_operators_weights)
             removal_operator_index = roulette_wheel_selection.spin_roulettewheel(removal_operators_probabilities)
 
-            repair_operators_probabilities = roulette_wheel_selection.get_probability_list(self.repair_operators_weights)
-            repair_operator_index = roulette_wheel_selection.spin_roulettewheel(repair_operators_probabilities)
-    
+            repair_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.repair_operators_weights)
+            # repair_operator_index = roulette_wheel_selection.spin_roulettewheel(repair_operators_probabilities)
+            repair_operator_index = 0
+
+            lecture_period_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.lecture_period_operators_weights)
+            lecture_period_operator_index = roulette_wheel_selection.spin_roulettewheel(lecture_period_operators_probabilities)
+
+            lecture_room_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.lecture_room_operators_weights)
+            lecture_room_operator_index = roulette_wheel_selection.spin_roulettewheel(lecture_room_operators_probabilities)
+
+            priority_rules_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.priority_rules_weights)
+            priority_rule_index = roulette_wheel_selection.spin_roulettewheel(priority_rules_probabilities)
+
+            # -------------------------------------------------------------------------------------------------------------------- #
+
             # Find neighbor solution by applying destruction/repair operator to the current solution
-            new_sol = self.neighbor(solution, iteration, remaining_iterations, removal_operator_index, repair_operator_index, course_penalties, curriculum_penalties)
+            new_sol = self.neighbor(solution, iteration, remaining_iterations,
+                                    removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
+                                    courses_penalties, curricula_penalties)
 
             if new_sol is not None:
                 # Calculate the new solution's cost
-                new_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(new_sol)
+                new_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(new_sol)
 
                 # The acceptance probability function takes in the old cost, new cost, and current temperature
                 # and spits out a number between 0 and 1, which is a sort of recommendation on whether or not to jump to the new solution.
@@ -127,9 +111,16 @@ class alns:
                 psi = max(score_w1, score_w2, score_w3)
                 lambda_param = 0.8
 
-                # recalcuate weights of removal operators based on the accepted solution
-                self.removal_operators_weights[str(removal_operator_index)] = lambda_param * self.removal_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
-                self.repair_operators_weights[str(repair_operator_index)] = lambda_param * self.repair_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
+                # recalcuate weights of  operators based on the accepted solution
+                operators_lookup.removal_operators_weights[str(removal_operator_index)] = lambda_param * operators_lookup.removal_operators_weights[str(removal_operator_index)] + (1-lambda_param) * psi
+                operators_lookup.repair_operators_weights[str(repair_operator_index)] = lambda_param * operators_lookup.repair_operators_weights[str(repair_operator_index)] + (1-lambda_param) * psi
+                # we need to recalculate weights only if two-stage operation was performed
+                # if max-SAT was performed it means that the below operators weren't used, hence didn't have impact in the result
+                # consequently we won't update the weights in this iteration
+                if repair_operator_index == 0:
+                    operators_lookup.lecture_period_operators_weights[str(lecture_period_operator_index)] = lambda_param * operators_lookup.lecture_period_operators_weights[str(lecture_period_operator_index)] + (1-lambda_param) * psi
+                    operators_lookup.lecture_room_operators_weights[str(lecture_room_operator_index)] = lambda_param * operators_lookup.lecture_room_operators_weights[str(lecture_room_operator_index)] + (1-lambda_param) * psi
+                    operators_lookup.priority_rules_weights[str(priority_rule_index)] = lambda_param * operators_lookup.priority_rules_weights[str(priority_rule_index)] + (1-lambda_param) * psi
 
             else:
                 print("None")
@@ -139,8 +130,10 @@ class alns:
         print('===============================\n')
         return global_best, global_best_cost
     
-    def neighbor(self, solution, iteration, remaining_iterations, removal_operator_index, repair_operator_index, courses_penalties, curricula_penalties):
-    
+    def neighbor(self, solution, iteration, remaining_iterations,
+                 removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
+                 courses_penalties, curricula_penalties):
+
         lectures_counter = 0
         for course in self.instance_data.courses:
             lectures_counter += int(course.lectures)
@@ -165,33 +158,22 @@ class alns:
         lectures_to_remove = random.randint(1, destroy_limit)
         # print('lectures_to_remove', lectures_to_remove)
     
-    
+        # different destroy operators expect different input parameters
+        # we are handling it accordingly below
         if removal_operator_index == 0:
-            schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, courses_penalties)
+            schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, courses_penalties)
         elif removal_operator_index == 1:
-            schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, curricula_penalties)
+            schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, curricula_penalties)
         else:
-            schedule, lectures_removed = self.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
+            schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
 
-
-        schedule = repair_operators.two_stage_repair_operator(schedule, lectures_removed, self.instance_data)
-        # print('\nremoved: ',len(lectures_removed))
-    
-        # lines = []
-        #
-        # for i in range(self.instance_data.days):
-        #     for j in range(self.instance_data.periods_per_day):
-        #         for k in range(self.instance_data.rooms_count):
-        #             if schedule[i][j][k] != "":
-        #                 line = schedule[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(
-        #                     j) + '\n'
-        #                 lines.append(line)
-        #
-        # for lecture in lectures_removed:
-        #     line = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
-        #     lines.append(line)
-        #
-        # schedule = maxSAT.solve(self.instance_data, lines)
+        if repair_operator_index == 0:
+            schedule = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed,
+                                                                                operators_lookup.lecture_period_operators[lecture_period_operator_index],
+                                                                                operators_lookup.lecture_room_operators[lecture_room_operator_index],
+                                                                                operators_lookup.priority_rules[priority_rule_index])
+        elif repair_operator_index == 1:
+            schedule = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed)
 
         return schedule
     
@@ -202,32 +184,6 @@ class alns:
         initial_solution_instance = initial_solution(self.instance_data)
 
         init_sol = initial_solution_instance.generate_solution()
-
-        # # MIP TESTS
-        #
-        # initial_solution = [[["" for k in range(len(self.instance_data.rooms))] for j in range(self.instance_data.periods_per_day)] for i in range(self.instance_data.days)]
-        #
-        # mip_instance = mip_operator(self.instance_data)
-        #
-        # result = mip_instance.repair()
-        #
-        # for c in range(len(self.instance_data.courses)):
-        #     for d in range(int(self.instance_data.days)):
-        #         for p in range(int(self.instance_data.periods_per_day)):
-        #             for r in range(int(self.instance_data.rooms_count)):
-        #                 if result[c][d][p][r].x > 0.99:
-        #                     initial_solution[d][p][r] = self.instance_data.courses[c].id
-        #
-        # print('qendresa',' init sol', initial_solution)
-        #
-        # obj_func_instance = objective_function("UD2", self.instance_data)
-        #
-        # # # Calculate cost/objective function of current solution
-        # current_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(init_sol)
-        # qendresa = current_cost
-        # print('INITIAL SOLUTION COST: ', current_cost)
-        #
-        # # END MIP TESTS
 
         # try:
         #     os.remove('/tmp/initial_solution')

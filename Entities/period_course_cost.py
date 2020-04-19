@@ -1,4 +1,4 @@
-class assignment_cost:
+class period_course_cost:
 
     def __init__(self, day, period, room, course, cost):
         self.day = day

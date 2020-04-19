@@ -9,22 +9,38 @@ import time
 
 class maxSAT:
 
-    def solve(instance_data, lectures):
+    def solve(schedule, instance_data, lectures_removed):
 
+        # prepare formatted input for max-SAT tool
+        rows = []
+
+        for i in range(instance_data.days):
+            for j in range(instance_data.periods_per_day):
+                for k in range(instance_data.rooms_count):
+                    if schedule[i][j][k] != "":
+                        row = schedule[i][j][k] + " " + instance_data.rooms[k].id + " " + str(i) + " " + str(
+                            j) + '\n'
+                        rows.append(row)
+
+        for lecture in lectures_removed:
+            row = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
+            rows.append(row)
+
+        # write formatted input to a file to be used by the next process (max-SAT)
         partial_temp_filename = '/tmp/partial' + str(uuid.uuid4())
         try:
             os.remove(partial_temp_filename)
         except OSError:
             pass
         with open(partial_temp_filename, 'a+') as f:
-            # print('')
 
-            for lecture_data in lectures:
-                f.write(lecture_data)
+            for row in rows:
+                f.write(row)
 
+        # file where the output will be written to
         output_file = configs.cbctt_dir + configs.output_name + str(uuid.uuid4())
 
-        # print(configs.instance_name)
+        # start process to execute Max-SAT
         with open('my-stdout.txt', 'w') as logfile:
             print('maxSAT process START')
             process = subprocess.Popen(
