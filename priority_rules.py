@@ -12,7 +12,7 @@ class priority_rules:
         for c in unscheduled_courses:
             course = next(
                 (i for i in instance_data.courses if i.id == c), None)
-            c_available_periods = repair_operators.check_periods_available(schedule, instance_data, course, period_lecture_assignments, None)
+            c_available_periods = repair_operators.check_periods_available(schedule, instance_data, course, period_lecture_assignments)
             c_periods_count[c] = len(c_available_periods)
 
         c_sorted = {k: v for k, v in sorted(c_periods_count.items(), key = lambda item:item[1])}

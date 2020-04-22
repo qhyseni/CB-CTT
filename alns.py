@@ -184,20 +184,32 @@ class alns:
         initial_solution_instance = initial_solution(self.instance_data)
 
         init_sol = initial_solution_instance.generate_solution()
+        # --------------------------------------------------
 
-        # try:
-        #     os.remove('/tmp/initial_solution')
-        # except OSError:
-        #     pass
-        # with open('/tmp/initial_solution', 'a+') as f:
-        #     # print solution  to console
-        #     for i in range(self.instance_data.days):
-        #         for j in range(self.instance_data.periods_per_day):
-        #             for k in range(len(self.instance_data.rooms)):
-        #                 if init_sol[i][j][k] != "":
-        #                     line = init_sol[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
-        #                     f.write(line)
+        # schedule = [[["" for k in range(len(self.instance_data.rooms))] for j in range(self.instance_data.periods_per_day)] for i in range(self.instance_data.days)]
+        # unscheduled_lectures = []
+        # for c in self.instance_data.courses:
+        #     lectures_counter = int(c.lectures)
+        #     # place course lectures into solution
+        #     for lecture in range(lectures_counter):
+        #         unscheduled_lectures.append(c.id)
         #
+        # init_sol = repair_operators.two_stage_repair_operator(schedule, self.instance_data, unscheduled_lectures, "mean", "match", operators_lookup.priority_rules[0])
+
+        # ---------------------------------------------------------------
+        try:
+            os.remove('/tmp/initial_solution')
+        except OSError:
+            pass
+        with open('/tmp/initial_solution', 'a+') as f:
+            # print solution  to console
+            for i in range(self.instance_data.days):
+                for j in range(self.instance_data.periods_per_day):
+                    for k in range(len(self.instance_data.rooms)):
+                        if init_sol[i][j][k] != "":
+                            line = init_sol[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
+                            f.write(line)
+
 
         schedule, cost = self.find_optimal_solution(init_sol)
 
