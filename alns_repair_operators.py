@@ -20,12 +20,16 @@ class repair_operators:
 
     def two_stage_repair_operator(schedule, instance_data, unscheduled_lectures, lecture_period_heuristic, lecture_room_heuristic, priority_rule_operator):
         period_lecture_assignments = repair_operators.assign_lecture_to_period(schedule, unscheduled_lectures, instance_data, lecture_period_heuristic, priority_rule_operator)
+        print("............................................... periods ", period_lecture_assignments)
+
         schedule = repair_operators.assign_lecture_to_room(schedule, unscheduled_lectures, instance_data, period_lecture_assignments, lecture_room_heuristic)
+        print("............................................... rooms ", schedule)
+
         print('FINAL SCHEDULE: ', schedule)
         return schedule
 
     def check_periods_available(schedule, instance_data, course, period_lecture_assignments):
-        # print('check period is available')
+
         available_periods = []
 
         for d in range(instance_data.days):
@@ -38,7 +42,7 @@ class repair_operators:
         return available_periods
 
     def check_periods_conflicts(schedule, instance_data, course):
-        print('check course conflicts')
+
         course_conflicts = {}
         current_course = next(
             (i for i in instance_data.courses if i.id == course), None)
@@ -91,10 +95,9 @@ class repair_operators:
         # during repair operators
         for assigned_course in assigned_lectures_to_period:
             for q in course_curricula:
-                if assigned_course in q.courses:
+                if assigned_course.id in q.courses:
                     return False
-                assigned_course_details = next(i for i in instance_data.courses if i.id == assigned_course)
-                if assigned_course_details.teacher_id == course.teacher_id:
+                if assigned_course.teacher_id == course.teacher_id:
                     return False
 
         # if there are rooms available from the fixed schedule, check how many lectures are assigned to this period in previous stages
@@ -145,12 +148,14 @@ class repair_operators:
                 if Pc1 is not None and len(Pc1) > 0:
                     # evaluate all periods of Pc; return best;
                     best_position_index = \
-                        repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, course, Pc1, lecture_period_heuristic)
+                        repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, period_lecture_assignments, course, Pc1, lecture_period_heuristic)
 
                     P_best = Pc1[best_position_index]
 
                     # insert the lecture to the best position in the schedule
-                    pc = period_course(P_best[0], P_best[1], course_to_assign)
+                    pc = period_course(P_best[0], P_best[1], course)
+                    if P_best[1] == 0:
+                        q = 9
                     period_lecture_assignments.append(pc)
 
                     print("PC1 ", P_best[0], P_best[1], course_to_assign)
@@ -184,22 +189,21 @@ class repair_operators:
                             conflicted = False
                             # first check if we have curriculum related conflict
                             for q in course_curricula:
-                                if assigned_course in q.courses:
+                                if assigned_course.id in q.courses:
                                     conflicted = True
                                     break
                             # check for teacher assignment conflict only if we didn't get any conflict in the curriculum check
                             # otherwise we already know that the course is confliced so no need to check for other conflicts
                             if not conflicted:
-                                assigned_course_details = next((i for i in instance_data.courses if i.id == assigned_course), None)
-                                if assigned_course_details.teacher_id == course.teacher_id:
+                                if assigned_course.teacher_id == course.teacher_id:
                                     conflicted = True
 
                             if conflicted:
-                                conflict_courses.append(assigned_course)
-                                if len(Pc[assigned_course]) == 0:
+                                conflict_courses.append(assigned_course.id)
+                                if len(Pc[assigned_course.id]) == 0:
                                     # conflict_courses_wcfa - indicates removable lectures (lectures that classify as removable from current course),
                                     # but don't have other conflicting free alternative positions if they get removed from this one.
-                                    conflict_courses_wcfa.append(assigned_course)
+                                    conflict_courses_wcfa.append(assigned_course.id)
 
                         if len(conflict_courses) > 0:
                             obj = period_conflict_courses(position[0], position[1], conflict_courses, conflict_courses_wcfa)
@@ -216,10 +220,13 @@ class repair_operators:
                         selected_for_removal = periods_conflict_courses[0]
                         P_best = [selected_for_removal.day, selected_for_removal.period]
 
+                        if P_best[1] == 0:
+                            q = 9
                         # remove conflicting lectures
                         for conflict_course in selected_for_removal.conflict_courses:
-                            pcc = period_course(P_best[0], P_best[1], conflict_course)
-                            period_lecture_assignments = list(filter(lambda a: a != pcc, period_lecture_assignments))
+                            cc = next((i for i in instance_data.courses if i.id == conflict_course), None)
+                            pc = period_course(P_best[0], P_best[1], cc)
+                            period_lecture_assignments = list(filter(lambda a: a != pc, period_lecture_assignments))
                             print("REMOVED ", P_best[0], P_best[1], conflict_course)
                             unscheduled_lectures.append(conflict_course)
 
@@ -230,18 +237,22 @@ class repair_operators:
                         # in this case of a tie we will choose the period with smallest number of conflicts and remove all lectured assigned during repair operation to it
                         # we will treat these lectures as "conflict courses" although technically they are not conflicting with the course we want to assign
                         best_position_index = \
-                        repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, course, Rc1, lecture_period_heuristic)
+                        repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, period_lecture_assignments, course, Rc1, lecture_period_heuristic)
                         P_best = Rc1[best_position_index]
 
+                        if P_best[1] == 0:
+                            q = 9
                         conflict_courses = [i for i in period_lecture_assignments if i.day == P_best[0] and i.period == P_best[1]]
 
                         for conflict_course in conflict_courses:
                             period_lecture_assignments = list(filter(lambda a: a != conflict_course, period_lecture_assignments))
-                            print("REMOVED ", P_best[0], P_best[1], conflict_course.course)
-                            unscheduled_lectures.append(conflict_course.course)
+                            print("REMOVED ", P_best[0], P_best[1], conflict_course.course.id)
+                            unscheduled_lectures.append(conflict_course.course.id)
 
+                    if P_best[1] == 0:
+                        q = 9
                     # add the new period-course assignment to the list that contains all assignments during repairing operator
-                    pc = period_course(P_best[0], P_best[1], course_to_assign)
+                    pc = period_course(P_best[0], P_best[1], course)
                     period_lecture_assignments.append(pc)
 
                     print("RC1 ", P_best[0], P_best[1], course_to_assign)
@@ -299,9 +310,8 @@ class repair_operators:
 
             print('AVAILABLE ROOMS: ', available_rooms)
 
-            lectures = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
-            print('LECTURES: ', lectures)
-            courses_to_schedule = [i for i in instance_data.courses if i.id in lectures]
+            courses_to_schedule = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
+
             # type 1: greatest heuristic
             # sort courses in ascending order by number of students
             if lecture_room_heuristic == "greatest":
@@ -334,33 +344,24 @@ class repair_operators:
                             selected_room = r
                     elif cost < min_cost:
                         selected_room = r
+                        min_cost = cost
                 print('SELECTED ROOM: ', selected_room)
                 if selected_room is not None:
                     schedule[day][period][selected_room] = c.id
                     available_rooms.pop(available_rooms.index(selected_room))
 
         print('SCHEDULE FINAL: ', schedule)
-        fname = '/tmp/comp01' + str(uuid.uuid4())
-        with open(fname, 'a+') as f:
-            # print solution  to console
-            for i in range(instance_data.days):
-                for j in range(instance_data.periods_per_day):
-                    for k in range(len(instance_data.rooms)):
-                        if schedule[i][j][k] != "":
-                            line = schedule[i][j][k] + " " + instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
-                            f.write(line)
 
         obj_func_instance = objective_function("UD2", instance_data)
 
         # Calculate cost/objective function of current solution
         current_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(schedule)
 
-        print('FILENAME: ', fname)
         print('COST: ', current_cost)
 
         return schedule
 
-    def evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures, course, available_periods, lecture_period_heuristic):
+    def evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, course, available_periods, lecture_period_heuristic):
 
         course_period_cost = {}
 
@@ -390,7 +391,7 @@ class repair_operators:
 
             ####### check room capacity #######
 
-            cost += repair_operators.calculate_room_capacity_cost(schedule, instance_data, unscheduled_lectures, day, period, course, lecture_period_heuristic)
+            cost += repair_operators.calculate_room_capacity_cost(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, day, period, course, lecture_period_heuristic)
 
             ####### ####### ####### ####### ####### ####### ####### #######
 
@@ -532,7 +533,7 @@ class repair_operators:
 
         return cost
 
-    def calculate_room_capacity_cost(schedule, instance_data, unscheduled_lectures, day, period, course, lecture_period_heuristic):
+    def calculate_room_capacity_cost(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, day, period, course, lecture_period_heuristic):
 
         penalty_instance = penalty(configs.cbctt_type)
         cost = 0
@@ -544,17 +545,19 @@ class repair_operators:
         # The capacity penalty then corresponds to the excess number of students.
 
         if lecture_period_heuristic == "best":
-            min_difference = 99999
-            for r in range(instance_data.rooms_count):
-                if schedule[day][period][r] is not '':
-                    continue
-                else:
-                    room_capacity = int(instance_data.rooms[r].size)
-                    if int(course.students) > room_capacity and int(course.students) - room_capacity < min_difference:
-                        min_difference = int(course.students) - room_capacity
 
-            if min_difference < 99999:
-                cost += min_difference * penalty_instance.get_room_capacity_penalty()
+            courses_to_schedule = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
+            courses_to_schedule.append(course)
+            courses_to_schedule.sort(key=lambda x: int(x.students), reverse=True)
+
+            available_rooms = []
+            for r in range(instance_data.rooms_count):
+                if schedule[day][period][r] is '':
+                    available_rooms.append(instance_data.rooms[r])
+
+            available_rooms.sort(key=lambda x: int(x.size), reverse=True)
+
+            cost += max(0, (int(courses_to_schedule[0].students) - int(available_rooms[0].size))) * penalty_instance.get_room_capacity_penalty()
 
         # if 2stage "mean" heuristic applies
         # A reference utilization of the room capacities u is computed by dividing the sum of the number of students
@@ -592,9 +595,9 @@ class repair_operators:
             eta_param = 1.3;
 
             # allowed percentage of covered capacity (without being penalized)
-            cap_utilization = float(required_capacity) / available_capacity * eta_param
+            cap_utilization = float(required_capacity) / available_capacity
 
-            capacity_limit = cap_utilization * period_available_capacity
+            capacity_limit = cap_utilization * eta_param * period_available_capacity
 
             cost += max(float(0), min(period_required_capacity + int(course.students) - capacity_limit,
                                       float(course.students)) * penalty_instance.get_room_capacity_penalty())

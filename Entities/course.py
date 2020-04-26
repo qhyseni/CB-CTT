@@ -7,15 +7,3 @@ class course:
         self.min_days = min_days
         self.students = students
         self.double_lectures = double_lectures
-
-    # id = property()
-    #
-    # teacher_id = property()
-    #
-    # lectures = property()
-    #
-    # min_days = property()
-    #
-    # students = property()
-    #
-    # double_lectures = property()

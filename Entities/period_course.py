@@ -1,3 +1,6 @@
+from Entities.course import course
+
+
 class period_course:
 
     def __init__(self, day, period, course):
@@ -9,4 +12,4 @@ class period_course:
         if not isinstance(other, period_course):
             return NotImplemented
 
-        return self.day == other.day and self.period == other.period and self.course == other.course
+        return self.day == other.day and self.period == other.period and self.course.id == other.course.id

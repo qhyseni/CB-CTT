@@ -128,6 +128,22 @@ class alns:
         print('===============================\n')
         print(global_best_cost)
         print('===============================\n')
+
+        # ---------------------------------------------------------------
+        try:
+            os.remove('/tmp/initial_solution')
+        except OSError:
+            pass
+        with open('/tmp/solution', 'a+') as f:
+            # print solution  to console
+            for i in range(self.instance_data.days):
+                for j in range(self.instance_data.periods_per_day):
+                    for k in range(len(self.instance_data.rooms)):
+                        if solution[i][j][k] != "":
+                            line = solution[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
+                            f.write(line)
+
+
         return global_best, global_best_cost
     
     def neighbor(self, solution, iteration, remaining_iterations,
