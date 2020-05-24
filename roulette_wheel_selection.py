@@ -1,5 +1,6 @@
 from random import randint
 import random
+from Experiments.statistics import statistics
 
 
 class roulette_wheel_selection:

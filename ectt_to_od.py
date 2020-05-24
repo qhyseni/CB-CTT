@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from Entities import course, room, curriculum, constraints
-from configs import configs
+from Experiments.configs import configs
+from Experiments.statistics import statistics
 
 
 # Convert data from XML instances to object properties
@@ -24,7 +25,6 @@ class ectt_data:
 
         with open(configs.datasets_dir+configs.instance_name, 'rU') as f:
             for line in f:
-                # print(line)
                 line = line.rstrip("\n")
 
                 if line.__contains__("Days"):

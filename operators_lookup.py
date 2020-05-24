@@ -3,6 +3,7 @@ from alns_destroy_operators import destroy_operators
 from alns_repair_operators import repair_operators
 from maxSAT_repair_operator import maxSAT
 from priority_rules import priority_rules
+from Experiments.statistics import statistics
 
 class operators_lookup:
 

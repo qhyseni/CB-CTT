@@ -13,7 +13,6 @@ instances = [
              'comp11', 'comp12','comp13', 'comp14', 'comp15',
              'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
 
-
 # ------------ w1 parameter tuning ------------- #
 
 wb = xlwt.Workbook()

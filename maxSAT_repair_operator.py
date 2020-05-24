@@ -1,16 +1,20 @@
 import subprocess
 import os
-from configs import configs
 import uuid
 import sys
 from subprocess import Popen, PIPE, STDOUT
 import time
+from Experiments.configs import configs
+from Experiments.statistics import statistics
 
 
 class maxSAT:
 
     def solve(schedule, instance_data, lectures_removed):
+        print("Max-SAT Operator")
+        statistics.maxsat_count += 1
 
+        Uc = []
         # prepare formatted input for max-SAT tool
         rows = []
 
@@ -42,7 +46,6 @@ class maxSAT:
 
         # start process to execute Max-SAT
         with open('my-stdout.txt', 'w') as logfile:
-            print('maxSAT process START')
             process = subprocess.Popen(
                 ['java', '-jar',
                  configs.jar_path,
@@ -54,10 +57,10 @@ class maxSAT:
                  ], stdout=logfile, stderr=logfile)
 
             try:
-                rc = process.communicate(timeout=30)
+                rc = process.communicate(timeout=(int(configs.maxsat_timeout)/1000)+10)
             except:
                 process.kill()
-                print("timeout timeout timeout timeout timeout timeout timeout")
+                print("TIMEOUT...TIMEOUT...TIMEOUT...TIMEOUT...TIMEOUT...TIMEOUT...")
 
             process.kill()
 
@@ -66,11 +69,7 @@ class maxSAT:
             # rc = process.wait()
             logfile.flush()
 
-            # print('rc:'+str(rc))
-            print('maxSAT process END')
-
         if os.path.exists(output_file):
-            # print('maxSAT Output file read START')
             schedule = [[["" for k in range(len(instance_data.rooms))] for j in range(instance_data.periods_per_day)] for i in
                         range(instance_data.days)]
             with open(output_file, "r") as content:
@@ -84,10 +83,9 @@ class maxSAT:
 
             os.remove(output_file)
 
-        # print('maxSAT Output file read END')
-            return schedule
+            return schedule, Uc
         else:
-            return None
+            return None, None
 
 
 

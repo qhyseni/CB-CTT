@@ -7,8 +7,9 @@ import copy
 from itertools import groupby
 import collections
 from collections import OrderedDict
-from configs import configs
-from parameters import parameters
+from Experiments.configs import configs
+from Experiments.parameters import parameters
+from Experiments.statistics import statistics
 from objective_function import objective_function
 from Entities.penalty import penalty
 from Entities.period_course import period_course
@@ -19,14 +20,16 @@ class repair_operators:
     ###################### Repair operators #############################################
 
     def two_stage_repair_operator(schedule, instance_data, unscheduled_lectures, lecture_period_heuristic, lecture_room_heuristic, priority_rule_operator):
-        period_lecture_assignments = repair_operators.assign_lecture_to_period(schedule, unscheduled_lectures, instance_data, lecture_period_heuristic, priority_rule_operator)
-        print("............................................... periods ", period_lecture_assignments)
+        print("2-stage Repair Operator")
+        statistics.two_stage_count += 1
+
+        Uc = []
+
+        period_lecture_assignments, Uc = repair_operators.assign_lecture_to_period(schedule, unscheduled_lectures, instance_data, lecture_period_heuristic, priority_rule_operator)
 
         schedule = repair_operators.assign_lecture_to_room(schedule, unscheduled_lectures, instance_data, period_lecture_assignments, lecture_room_heuristic)
-        print("............................................... rooms ", schedule)
 
-        print('FINAL SCHEDULE: ', schedule)
-        return schedule
+        return schedule, Uc
 
     def check_periods_available(schedule, instance_data, course, period_lecture_assignments):
 
@@ -135,22 +138,26 @@ class repair_operators:
             removed_lectures = []
             # find first course to assign based on chosen priority rule
             course_to_assign = sorted_courses[0]
-
+            print("Course to assign: ", course_to_assign)
             course = next(
                 (i for i in instance_data.courses if i.id == course_to_assign), None)
 
             Rc1 = Rc[course_to_assign]
+            print("Removable lectures: ", Rc1)
             # how many lectures should we assign per each course
             unscheduled_counter = unscheduled_lectures.count(course_to_assign)
 
             while unscheduled_counter > 0:
                 Pc1 = copy.deepcopy(Pc[course_to_assign])
+                print("Available Periods: ", Pc1)
+
                 if Pc1 is not None and len(Pc1) > 0:
                     # evaluate all periods of Pc; return best;
                     best_position_index = \
                         repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, period_lecture_assignments, course, Pc1, lecture_period_heuristic)
 
                     P_best = Pc1[best_position_index]
+                    print("Best Period: ", P_best)
 
                     # insert the lecture to the best position in the schedule
                     pc = period_course(P_best[0], P_best[1], course)
@@ -158,15 +165,16 @@ class repair_operators:
                         q = 9
                     period_lecture_assignments.append(pc)
 
-                    print("PC1 ", P_best[0], P_best[1], course_to_assign)
-
                     if P_best in Rc1:
                         Rc1.pop(Rc1.index(P_best))
                     Pc = repair_operators.available_periods_per_courses(schedule, instance_data, unscheduled_courses_copy, period_lecture_assignments)
 
                 elif Rc1 is not None and len(Rc1) > 0:
-                    course_curricula = [i for i in instance_data.curricula if course.id in i.courses]
+                    print("Backtracking")
+                    print("Removable lectures: ", Rc1)
+                    statistics.backtrack_count += 1
 
+                    course_curricula = [i for i in instance_data.curricula if course.id in i.courses]
                     # if we are not able to assign course to any period, we apply Backtracking
                     # Backtracking will consider to remove only the lectures that are assigned during the repairing phase
 
@@ -220,14 +228,12 @@ class repair_operators:
                         selected_for_removal = periods_conflict_courses[0]
                         P_best = [selected_for_removal.day, selected_for_removal.period]
 
-                        if P_best[1] == 0:
-                            q = 9
                         # remove conflicting lectures
                         for conflict_course in selected_for_removal.conflict_courses:
                             cc = next((i for i in instance_data.courses if i.id == conflict_course), None)
                             pc = period_course(P_best[0], P_best[1], cc)
                             period_lecture_assignments = list(filter(lambda a: a != pc, period_lecture_assignments))
-                            print("REMOVED ", P_best[0], P_best[1], conflict_course)
+
                             unscheduled_lectures.append(conflict_course)
 
                     else:
@@ -240,29 +246,24 @@ class repair_operators:
                         repair_operators.evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures_copy, period_lecture_assignments, course, Rc1, lecture_period_heuristic)
                         P_best = Rc1[best_position_index]
 
-                        if P_best[1] == 0:
-                            q = 9
                         conflict_courses = [i for i in period_lecture_assignments if i.day == P_best[0] and i.period == P_best[1]]
 
                         for conflict_course in conflict_courses:
                             period_lecture_assignments = list(filter(lambda a: a != conflict_course, period_lecture_assignments))
-                            print("REMOVED ", P_best[0], P_best[1], conflict_course.course.id)
+
                             unscheduled_lectures.append(conflict_course.course.id)
 
-                    if P_best[1] == 0:
-                        q = 9
                     # add the new period-course assignment to the list that contains all assignments during repairing operator
                     pc = period_course(P_best[0], P_best[1], course)
                     period_lecture_assignments.append(pc)
-
-                    print("RC1 ", P_best[0], P_best[1], course_to_assign)
+                    print("Best Period: ", [P_best[0], P_best[1]])
 
                     if P_best in Rc1:
                         Rc1.pop(Rc1.index(P_best))
                     Pc = repair_operators.available_periods_per_courses(schedule, instance_data, unscheduled_courses_copy, period_lecture_assignments)
 
                 else:
-                    print("UC")
+                    print("Lecture left unscheduled.")
                     Uc.append(course_to_assign)
 
                 unscheduled_counter = unscheduled_counter - 1
@@ -273,8 +274,7 @@ class repair_operators:
             # sort unscheduled courses according to chosen priority rule
             sorted_courses = priority_rule_operator(schedule, instance_data, unscheduled_courses, period_lecture_assignments)
 
-        print('unscheduled lectures: ', unscheduled_lectures)
-        return period_lecture_assignments
+        return period_lecture_assignments, Uc
 
     def available_periods_per_courses(schedule, instance_data, unscheduled_courses, period_lecture_assignments):
         Pc = {}
@@ -288,19 +288,12 @@ class repair_operators:
         return Pc
 
     def assign_lecture_to_room(schedule, unscheduled_lectures, instance_data, period_lecture_assignments, lecture_room_heuristic):
-
-        print('SCHEDULE: ', schedule)
-        print('UNSCHEDULED LECTURES: ', unscheduled_lectures)
-        print('PERIODS LECTURES LIST: ', [(i.day, i.period, i.course) for i in period_lecture_assignments])
-
         # select periods only from periods_lectures list and remove duplicates
         periods = set(map(tuple, [[x.day, x.period] for x in period_lecture_assignments]))
         # shuffle the periods list so we take the random approach in placing the lectures in rooms
         random.shuffle(list(periods))
-        print('SHUFFLED PERIODS: ', periods)
 
         for p in periods:
-            print('PERIOD: ', p)
             day = p[0]
             period = p[1]
             available_rooms = []
@@ -308,23 +301,22 @@ class repair_operators:
                 if schedule[day][period][r] is '':
                     available_rooms.append(r)
 
-            print('AVAILABLE ROOMS: ', available_rooms)
-
             courses_to_schedule = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
 
             # type 1: greatest heuristic
             # sort courses in ascending order by number of students
             if lecture_room_heuristic == "greatest":
+                print("Greatest Heuristic")
+                statistics.two_stage_greatest_count += 1
                 courses_to_schedule.sort(key=lambda x : int(x.students),reverse=True)
             # type 2: match heuristic
             # sort courses randomly
             elif lecture_room_heuristic == "match" or lecture_room_heuristic is None:
+                print("Match Heuristic")
+                statistics.two_stage_match_count += 1
                 random.shuffle(courses_to_schedule)
 
-            print('COURSES TO SCHEDULE: ', [i.id for i in courses_to_schedule])
-
             for c in courses_to_schedule:
-                print('COURSE: ', c.id)
                 min_cost = 999999
                 selected_room = None
                 for r in available_rooms:
@@ -336,33 +328,27 @@ class repair_operators:
                     # the rationale behind this is to keep smaller rooms for courses with less students,
                     # which might be beneficial with regard to the room stability
                     if lecture_room_heuristic == "greatest" and cost == min_cost and int(room.size) > int(instance_data.rooms[selected_room].size):
-                            selected_room = r
+                        selected_room = r
                     # ties are broken by preferring the room with smallest capacity
                     # the reason is that since lectures are schedules in a random order,
                     # there might be lectures that are processed later and require large rooms
                     elif lecture_room_heuristic == "match" and cost == min_cost and int(room.size) < int(instance_data.rooms[selected_room].size):
-                            selected_room = r
+                        selected_room = r
                     elif cost < min_cost:
                         selected_room = r
                         min_cost = cost
-                print('SELECTED ROOM: ', selected_room)
+
+                print('Selected Room {} for Lecture {}'.format(selected_room, c.id))
                 if selected_room is not None:
                     schedule[day][period][selected_room] = c.id
                     available_rooms.pop(available_rooms.index(selected_room))
-
-        print('SCHEDULE FINAL: ', schedule)
-
-        obj_func_instance = objective_function("UD2", instance_data)
-
-        # Calculate cost/objective function of current solution
-        current_cost, course_penalties, curriculum_penalties = obj_func_instance.cost(schedule)
-
-        print('COST: ', current_cost)
 
         return schedule
 
     def evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, course, available_periods, lecture_period_heuristic):
 
+        if course.id == "c0002":
+            print("")
         course_period_cost = {}
 
         index = 0
@@ -373,13 +359,13 @@ class repair_operators:
 
             ####### check compactness #######
 
-            cost += repair_operators.calculate_compactness_cost(schedule, instance_data, day, period, course.id)
+            cost += repair_operators.calculate_compactness_cost(schedule, instance_data, period_lecture_assignments, day, period, course.id)
 
             ####### ####### ####### ####### ####### ####### ####### #######
 
             ####### check spread in days #######
 
-            cost += repair_operators.calculate_spread_days_cost(schedule, instance_data, day, course)
+            cost += repair_operators.calculate_spread_days_cost(schedule, instance_data, period_lecture_assignments, day, course)
 
             ####### ####### ####### ####### ####### ####### ####### #######
 
@@ -395,108 +381,151 @@ class repair_operators:
 
             ####### ####### ####### ####### ####### ####### ####### #######
 
+            print("Total Cost for day {}, period {}, course {}: {}".format(day, period, course.id, cost))
+
             course_period_cost[index] = cost
             index += 1
 
         # sort in ascending order periods based on cost evaluated by 4 previous step
         # and return the first period as the best period to insert the course
         course_period_cost = {k: v for k, v in sorted(course_period_cost.items(), key=lambda item: item[1])}
-        return list(course_period_cost.keys())[0]
+        selected_position = 0
+        selected_value = list(course_period_cost.values())[selected_position]
+        count_same_with_selected = sum(value == selected_value for value in course_period_cost.values())
+        if count_same_with_selected > 1:
+            selected_position = random.randrange(count_same_with_selected)
+        return list(course_period_cost.keys())[selected_position]
 
-    def calculate_compactness_cost(schedule, instance_data, day, period, c):
+    def calculate_compactness_cost(schedule, instance_data, period_lecture_assignments, day, period, c):
 
         penalty_instance = penalty(configs.cbctt_type)
         cost = 0
         # if there is no adjacent slot that has scheduled any course from the same curriculum
         # means that if we place the lecture in the current slot it will be isolated
-        # and hence it will increase the cost of curriculim compactness
+        # and hence it will increase the cost of curriculum compactness
         #
         # if there is a course from same curriculum in the neighbor period (adjacent slot)
-        # means that if we place this current lecture at this slot, and if the course from same curricula in the adjacent slot
-        # was isolated before, will no longer be so, and we will reduce the cost of curriculum compactness
+        # means that if we place this current lecture at this slot,
+        # and if the course from same curricula in the adjacent slot was isolated before,
+        # will no longer be so, and we will reduce the cost of curriculum compactness
         # line below checks if same curriculum course in the adjacent period is isolated or not
-        is_lecture_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, c, day, period)
+        is_lecture_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period)
         if is_lecture_isolated:
             cost += penalty_instance.get_isolated_lectures_penalty()
         else:
             if period == 0:
-                is_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, c, day, period + 1)
+                is_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period + 1)
                 if is_neighbor_isolated:
                     cost -= penalty_instance.get_isolated_lectures_penalty()
 
             elif period == instance_data.periods_per_day - 1:
-                is_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, c, day, period - 1)
+                is_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period - 1)
                 if is_neighbor_isolated:
                     cost -= penalty_instance.get_isolated_lectures_penalty()
 
             else:
-                is_left_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, c, day, period - 1)
-                if is_left_neighbor_isolated:
-                    cost -= penalty_instance.get_isolated_lectures_penalty()
+                if repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period - 1):
+                    is_left_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period - 1)
+                    if is_left_neighbor_isolated:
+                        cost -= penalty_instance.get_isolated_lectures_penalty()
 
-                is_right_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, c, day, period + 1)
-                if is_right_neighbor_isolated:
-                    cost -= penalty_instance.get_isolated_lectures_penalty()
+                if repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period + 1):
+                    is_right_neighbor_isolated = repair_operators.is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period + 1)
+                    if is_right_neighbor_isolated:
+                        cost -= penalty_instance.get_isolated_lectures_penalty()
 
+        print("Compactness Cost for day {}, period {}, course{}".format(day, period, c))
         return cost
 
-    def is_lecture_isolated(schedule, instance_data, c, day, period):
+    def is_lecture_isolated(schedule, instance_data, period_lecture_assignments, c, day, period):
 
         if period == 0:
-            has_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, c, day, period + 1)
+            has_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period + 1)
             return not has_curriculum_neighbor
 
         elif period == instance_data.periods_per_day - 1:
-            has_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, c, day, period - 1)
+            has_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period - 1)
             return not has_curriculum_neighbor
 
         else:
-            has_left_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, c, day, period - 1)
-            has_right_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, c, day, period + 1)
+            has_left_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period - 1)
+            has_right_curriculum_neighbor = repair_operators.has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, period + 1)
             return not (has_left_curriculum_neighbor or has_right_curriculum_neighbor)
 
-    def has_curriculum_neighbor(schedule, instance_data, c, day, neighbor_period):
+    def has_curriculum_neighbor(schedule, instance_data, period_lecture_assignments, c, day, neighbor_period):
 
         course_curricula = [i for i in instance_data.curricula if c in i.courses]
 
+        period_assigned_neighbor_courses = [x.course.id for x in period_lecture_assignments if
+                                       x.day == day and x.period == neighbor_period]
+
         has_neighbor = False
-        for r in range(instance_data.rooms_count):
-            neighbor_course = schedule[day][neighbor_period][r]
-            if neighbor_course != "":
-                for q in course_curricula:
-                    if neighbor_course in q.courses:
-                        has_neighbor = True
-                        break
-                if has_neighbor:
+        # let us check first if any course belonging to the same curricula as current course
+        # is assigned to the neighbor period (adjacent slot)
+        for neighbor_course in period_assigned_neighbor_courses:
+            for q in course_curricula:
+                if neighbor_course in q.courses:
+                    has_neighbor = True
                     break
+            if has_neighbor:
+                break
+
+        # if no courses from same curricula found in adjacent slot
+        # from those assigned to that slot during period-lecture assignment stage
+        # then let's check if any course from the fixed schedule belongs to same curricula
+        if not has_neighbor:
+            for r in range(instance_data.rooms_count):
+                neighbor_course = schedule[day][neighbor_period][r]
+                if neighbor_course != "":
+                    for q in course_curricula:
+                        if neighbor_course in q.courses:
+                            has_neighbor = True
+                            break
+                    if has_neighbor:
+                        break
 
         return has_neighbor
 
-    def calculate_spread_days_cost(schedule, instance_data, day, course):
+    def calculate_spread_days_cost(schedule, instance_data, period_lecture_assignments, day, course):
 
         penalty_instance = penalty(configs.cbctt_type)
         spread = 0
         cost = 0
+
         # Whenever the required spread over days of the course is not reached and
         # no other lecture of the same course has been scheduled on the considered day,
         # the respective penalty is subtracted, since the solution will be improved.
         course_exists_in_considered_day = False
         for d in range(instance_data.days):
             course_scheduled_in_day = False
-            for p in range(instance_data.periods_per_day):
-                for r in range(instance_data.rooms_count):
-                    if schedule[d][p][r] == course.id:
-                        course_scheduled_in_day = True
-                        spread += 1
-                        if d == day:
-                            course_exists_in_considered_day = True
+            # check if any lecture of this course is already assigned to this day
+            # so we count it in the spread days cost
+            period_assigned_courses = [x.course.id for x in period_lecture_assignments if
+                                       x.day == d]
+            if course.id in period_assigned_courses:
+                course_scheduled_in_day = True
+
+            # if no lecture of the course is scheduled to this day during the period-lecture assignment stage
+            # we check if any lecture of the course is scheduled in this day in the fixed schedule
+            if not course_scheduled_in_day:
+                for p in range(instance_data.periods_per_day):
+                    for r in range(instance_data.rooms_count):
+                        if schedule[d][p][r] == course.id:
+                            course_scheduled_in_day = True
+                            break
+
+                    if course_scheduled_in_day:
                         break
-                if course_scheduled_in_day:
-                    break
+
+            if course_scheduled_in_day:
+                spread += 1
+                if d == day:
+                    course_exists_in_considered_day = True
 
         if int(course.min_days) > spread and not course_exists_in_considered_day:
             cost -= penalty_instance.get_min_wdays_penalty()
 
+        print("Minimum Spread Days Cost for day {}, course {}: {}".format(day, course.id, cost))
         return cost
 
     def calculate_room_stability_cost(schedule, instance_data, day, period, c, room):
@@ -531,6 +560,7 @@ class repair_operators:
         if not available_room:
             cost += penalty_instance.get_room_stability_penalty()
 
+        print("Room Stability Cost for day {}, period {}, course {}: {}".format(day, period, c, cost))
         return cost
 
     def calculate_room_capacity_cost(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, day, period, course, lecture_period_heuristic):
@@ -545,6 +575,8 @@ class repair_operators:
         # The capacity penalty then corresponds to the excess number of students.
 
         if lecture_period_heuristic == "best":
+            print("2-stage Best Heuristic")
+            statistics.two_stage_best_count += 1
 
             courses_to_schedule = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
             courses_to_schedule.append(course)
@@ -557,7 +589,14 @@ class repair_operators:
 
             available_rooms.sort(key=lambda x: int(x.size), reverse=True)
 
-            cost += max(0, (int(courses_to_schedule[0].students) - int(available_rooms[0].size))) * penalty_instance.get_room_capacity_penalty()
+            courses_to_schedule_length = len(courses_to_schedule)
+            try:
+                for i in range(courses_to_schedule_length):
+                    cost += max(0, (int(courses_to_schedule[i].students) - int(available_rooms[i].size)))
+            except:
+                print("")
+
+            cost = cost * penalty_instance.get_room_capacity_penalty()
 
         # if 2stage "mean" heuristic applies
         # A reference utilization of the room capacities u is computed by dividing the sum of the number of students
@@ -568,6 +607,8 @@ class repair_operators:
         # the insertion cost corresponds to the number of students of the assigned lectures exceeding
         # the capacity limit of the considered period.
         elif lecture_period_heuristic == "mean":
+            print("2-stage Mean Heuristic")
+            statistics.two_stage_mean_count += 1
 
             available_capacity = 0
             required_capacity = 0
@@ -602,6 +643,7 @@ class repair_operators:
             cost += max(float(0), min(period_required_capacity + int(course.students) - capacity_limit,
                                       float(course.students)) * penalty_instance.get_room_capacity_penalty())
 
+        print("Room Capacity Cost for day {}, period {}, course {}: {}".format(day, period, course.id, cost))
         return cost
 
     ###################### End of Repair operators #############################################

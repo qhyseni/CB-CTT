@@ -1,5 +1,6 @@
 import xml_to_od
 from Entities.penalty import penalty
+from Experiments.statistics import statistics
 
 
 class objective_function:
@@ -44,7 +45,6 @@ class objective_function:
             room_stability_penalty, course_penalties = self.room_stability_penalties(current_solution, course_penalties)
 
             cost = room_capacity_penalty + min_wdays_penalty + isolated_lectures_penalty + room_stability_penalty
-            # print("rc:",room_capacity_penalty, "mwd:",min_wdays_penalty, "il:",isolated_lectures_penalty, "rs:",room_stability_penalty)
 
             return cost, course_penalties, curriculum_penalties
 
@@ -52,7 +52,7 @@ class objective_function:
     # than or equal the number of seats of all the rooms that host its lectures.
     # Each student above the capacity counts as 1 point of penalty.
     def room_capacity_penalties(self, current_solution, course_penalties):
-        # print('room_capacity_penalties START')
+
         penalty = 0
 
         for i in range(self.instance_data.days):
@@ -67,17 +67,13 @@ class objective_function:
                             extra_students = students - room_size
                             penalty += extra_students
                             course_penalties[course_id] += extra_students
-                            # print('ROOM CAPACITY ,c,d,p,r,students,room size', current_solution[i][j][k],i,j,k,students,room_size)
 
-
-        # print('room_capacity_penalties END')
         return penalty, course_penalties
 
     # The lectures of each course must be spread into a given minimum number of days.
     # Each day below the minimum counts as 1 violation.
     def min_wdays_penalties(self, current_solution, course_penalties):
 
-        # print('min_wdays_penalties START')
         penalty = 0
 
         for course in self.instance_data.courses:
@@ -99,9 +95,7 @@ class objective_function:
                 cost = (min_days - course_days) * self.penalties.min_wdays_penalty
                 penalty += cost
                 course_penalties[course.id] += cost
-                # print('MIN WORKING DAYS,c,number of days,penalty', course.id, (min_days - course_days), cost)
 
-        # print('min_wdays_penalties END')
         return penalty, course_penalties
 
 
@@ -111,7 +105,6 @@ class objective_function:
     # Each time window in a curriculum counts as many violation as its length (in periods).
     def windows_penalties(self, current_solution, curriculum_penalties):
 
-        # print('windows_penalties START')
         penalty = 0
 
         for curriculum in self.instance_data.curricula:
@@ -133,7 +126,6 @@ class objective_function:
                                 check_for_windows = True
                                 break
 
-        # print('windows_penalties END')
         return penalty, curriculum_penalties
 
 
@@ -141,7 +133,6 @@ class objective_function:
     # Each lecture below the minimum or above the maximum counts as 1 violation.
     def minmax_load_penalties(self, current_solution):
 
-        # print('minmax_load_penalties START')
         penalty = 0
 
         for curriculum in self.instance_data.curricula:
@@ -160,7 +151,6 @@ class objective_function:
                 elif daily_lectures < self.instance_data.daily_min_lectures:
                     penalty += self.instance_data.daily_min_lectures - daily_lectures
 
-        # print('minmax_load_penalties END')
         return penalty
 
 
@@ -171,7 +161,6 @@ class objective_function:
     # violation.
     def double_lectures_penalties(self, current_solution):
 
-        # print('double_lectures_penalties START')
         penalty = 0
 
         for course in self.instance_data.courses:
@@ -199,7 +188,6 @@ class objective_function:
                             elif course_periods[l-1] == 0 and course_periods[l+1] == 0:
                                 penalty += 1
 
-        # print('double_lectures_penalties END')
         return penalty
 
 
@@ -209,7 +197,6 @@ class objective_function:
     # Each isolated lecture in a curriculum counts as 1 violation.
     def isolated_lectures_penalties(self, current_solution, curriculum_penalties):
 
-        # print('isolated_lectures_penalties START')
         penalty = 0
 
         for curriculum in self.instance_data.curricula:
@@ -234,7 +221,6 @@ class objective_function:
                             if l == 0 and curriculum_periods[l+1] == 0:
                                 penalty += self.penalties.isolated_lectures_penalty
 
-                                # print('ISOLATED LECTURES,d,p,penalty', i,l, penalty)
                                 curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
                             elif l == self.instance_data.periods_per_day - 1 and curriculum_periods[l-1] == 0:
                                 penalty += self.penalties.isolated_lectures_penalty
@@ -243,15 +229,12 @@ class objective_function:
                                 curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
                                 penalty += self.penalties.isolated_lectures_penalty
 
-        # print('isolated_lectures_penalties END')
         return penalty, curriculum_penalties
-
 
     # All lectures of a course should be given in the same room. Each distinct
     # room used for the lectures of a course, but the first, counts as 1 violation.
     def room_stability_penalties(self, current_solution, course_penalties):
 
-        # print('room_stability_penalties START')
         penalty = 0
 
         for course in self.instance_data.courses:
@@ -270,8 +253,5 @@ class objective_function:
                                     penalty += self.penalties.room_stability_penalty
                                     course_penalties[course.id] += self.penalties.room_stability_penalty
 
-                                    # print('ROOM STABILITY ,c,d,p,r', current_solution[i][j][k], i, j,k)
-
-        # print('room_stability_penalties END')
         return penalty, course_penalties
 

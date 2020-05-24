@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from Entities import course, room, curriculum, constraints
-
+from Experiments.statistics import statistics
 
 # Convert data from XML instances to object properties
 # The XML format should be validated against http://tabu.diegm.uniud.it/ctt/cb_ctt.dtd

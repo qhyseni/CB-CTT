@@ -9,5 +9,6 @@ class configs:
     sbps_path = '/home/esa/Documents/Thesis/cb-ctt/loandra_static'
     instance_name = 'toy.ectt'
     output_name = 'output.txt'
-    maxsat_timeout = '5000'
+    # in ms i.e. 10,000 = 10 sec
+    maxsat_timeout = '10000'
     cbctt_type = "UD2"

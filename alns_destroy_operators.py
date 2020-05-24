@@ -1,16 +1,18 @@
 from random import randint
 import random
 import math
-from parameters import parameters
+from Experiments.parameters import parameters
+from Experiments.statistics import statistics
 
 class destroy_operators:
 
     ###################### Removal operators #############################################
 
     def worst_courses_removal(schedule, destroy_limit, instance_data, penalties):
-        # print('worst_courses_removal')
-        lectures_removed = []
+        print("Worst Course Removal")
+        statistics.worst_courses_removal_count += 1
 
+        lectures_removed = []
         sorted_course_penalties = sorted(penalties.items(), key=lambda kv: kv[1], reverse=True)
         while destroy_limit > 0:
             courses_count = len(sorted_course_penalties)
@@ -28,12 +30,14 @@ class destroy_operators:
                             schedule[i][j][k] = ""
                             destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     def worst_curricula_removal(schedule, destroy_limit, instance_data, penalties):
-        # print('worst_curricula_removal')
-        lectures_removed = []
+        print("Worst Curricula Removal")
+        statistics.worst_curricula_removal_count += 1
 
+        lectures_removed = []
         sorted_curriculum_penalties = sorted(penalties.items(), key=lambda kv: kv[1], reverse=True)
         while destroy_limit > 0:
             curricula_count = len(sorted_curriculum_penalties)
@@ -54,13 +58,15 @@ class destroy_operators:
                                 schedule[i][j][k] = ""
                                 destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     # The random destroy operator removes lectures from the schedule at random.
     def random_lecture_removal(schedule, destroy_limit, instance_data):
-        # print('random_lecture_removal')
-        lectures_removed = []
+        print("Random Lecture Removal")
+        statistics.random_lecture_removal_count += 1
 
+        lectures_removed = []
         while destroy_limit > 0:
             day = randint(0, instance_data.days- 1)
             period = randint(0, instance_data.periods_per_day - 1)
@@ -70,14 +76,16 @@ class destroy_operators:
                 schedule[day][period][room] = ""
                 destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     # The random period destroy operator repetitively selects a day-period pair at random and
     # removes all its scheduled lectures
     def random_dayperiod_removal(schedule, destroy_limit, instance_data):
-        # print('random_dayperiod_removal')
-        lectures_removed = []
+        print("Random Day-Period Removal")
+        statistics.random_dp_removal_count += 1
 
+        lectures_removed = []
         while destroy_limit > 0:
             day = randint(0, instance_data.days - 1)
             period = randint(0, instance_data.periods_per_day - 1)
@@ -90,14 +98,16 @@ class destroy_operators:
                     schedule[day][period][k] = ""
                     destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     # The roomday destroy operator repetitively removes all lectures that are assigned to a randomly
     # selected room on a randomly selected day.
     def random_roomday_removal(schedule, destroy_limit, instance_data):
-        # print('random_roomday_removal')
-        lectures_removed = []
+        print("Random Room-Day Removal")
+        statistics.random_rd_removal_count += 1
 
+        lectures_removed = []
         while destroy_limit > 0:
             day = randint(0, instance_data.days - 1)
             room = randint(0, len(instance_data.rooms) - 1)
@@ -110,14 +120,16 @@ class destroy_operators:
                     schedule[day][j][room] = ""
                     destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
     
     # The roomcourse destroy operator repetitively removes all lectures that are assigned to a restricted
     # selected from room constrained list
     def restricted_roomcourse_removal(schedule, destroy_limit, instance_data):
-        # print('restricted_roomcourse_removal')
-        lectures_removed = []
+        print("Restricted Room-Course Removal")
+        statistics.restricted_rc_removal_count += 1
 
+        lectures_removed = []
         rooms_count = len(instance_data.rooms)
 
         for rc in instance_data.room_constraints:
@@ -135,14 +147,16 @@ class destroy_operators:
                                 schedule[i][j][k] = ""
                                 destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     # The teacher operator is used to ease restrictions regarding teacher conflicts. Teachers are
     # randomly selected and all of their lectures are removed from the schedule.
     def random_teacher_removal(schedule, destroy_limit, instance_data):
-        # print('random_teacher_removal')
-        lectures_removed = []
+        print("Random Teacher Removal")
+        statistics.random_teacher_removal_count += 1
 
+        lectures_removed = []
         teachers = list(set([o.teacher_id for o in instance_data.courses]))
 
         while destroy_limit > 0:
@@ -161,6 +175,7 @@ class destroy_operators:
                                 schedule[i][j][k] = ""
                                 destroy_limit -= 1
 
+        print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed
 
     ###################### End of Removal operators #############################################

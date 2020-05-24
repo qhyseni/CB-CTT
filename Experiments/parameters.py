@@ -9,9 +9,8 @@ class parameters:
     w2 = 15  # score for accepted
     w3 = 18  # score for better than current solution
 
-    time_limit = 480 # execution time for ALNS
-    iteration_limit = 200000 # iteraions limit for ALNS
-
+    time_limit = 960 # execution time for ALNS
+    iteration_limit = 500000 # iteraions limit for ALNS
 
     # time_limit = 25 # execution time for ALNS
     # iteration_limit = 100 # iteraions limit for ALNS

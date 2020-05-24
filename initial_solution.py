@@ -1,6 +1,8 @@
 from random import randint
 from alns_repair_operators import repair_operators
 from operators_lookup import operators_lookup
+from maxSAT_repair_operator import maxSAT
+from Experiments.statistics import statistics
 
 class initial_solution:
 
@@ -16,7 +18,7 @@ class initial_solution:
         self.teachers_scheduled_timeslots = {}
 
     def generate_solution(self):
-
+        print("Generating Initial Solution...")
         # Declaration of INITIAL SOLUTION as a 3-dimensional array
         # The array contains days, each day contains periods, each period contains rooms
         # in which the courses can take place
@@ -29,8 +31,10 @@ class initial_solution:
             for lecture in range(lectures_counter):
                 unscheduled_lectures.append(course.id)
 
-        initial_solution = repair_operators.two_stage_repair_operator(schedule, self.instance_data, unscheduled_lectures, "best", "match", operators_lookup.priority_rules[0])
+        initial_solution = repair_operators.two_stage_repair_operator(schedule, self.instance_data, unscheduled_lectures, "best", "greatest", operators_lookup.priority_rules[0])
 
+        # initial_solution = maxSAT.solve(schedule, self.instance_data, unscheduled_lectures)
+        print("Initial Solution: ", initial_solution)
         return initial_solution
 
 

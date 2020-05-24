@@ -1,7 +1,7 @@
 import xlwt
 from datetime import datetime
-from configs import configs
-from parameters import parameters
+from Experiments.configs import configs
+from Experiments.parameters import parameters
 from alns import alns
 import random
 
