@@ -9,8 +9,8 @@ class parameters:
     w2 = 15  # score for accepted
     w3 = 18  # score for better than current solution
 
-    time_limit = 960 # execution time for ALNS
-    iteration_limit = 500000 # iteraions limit for ALNS
+    time_limit = 480 # execution time for ALNS
+    iteration_limit = 200000 # iteraions limit for ALNS
 
     # time_limit = 25 # execution time for ALNS
     # iteration_limit = 100 # iteraions limit for ALNS
@@ -41,3 +41,6 @@ class parameters:
     # If κ is large it is likely to select the most
     # related lecture. On the other hand, if κ = 1 each lecture has the same selection probability
     selection_probability = 5
+
+    # multiply or divide unassigned penalty/cost if solution is infeasible or feasible, respectively
+    adjust_unscheduled_cost = 1.001

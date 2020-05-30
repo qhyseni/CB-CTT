@@ -164,4 +164,3 @@ class ectt_data:
                 room_constraints.append(rc)
 
         return room_constraints
-

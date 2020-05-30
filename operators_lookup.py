@@ -14,8 +14,9 @@ class operators_lookup:
         "2": 1,
         "3": 1,
         "4": 1,
-        "5": 1,
-        "6": 1}
+        "5": 1
+        # "6": 1
+    }
 
     # array of removal operators methods with tuple of position (key) and value (method name)
     removal_operators = {
@@ -24,8 +25,8 @@ class operators_lookup:
         2: destroy_operators.random_lecture_removal,
         3: destroy_operators.random_dayperiod_removal,
         4: destroy_operators.random_roomday_removal,
-        5: destroy_operators.random_teacher_removal,
-        6: destroy_operators.restricted_roomcourse_removal
+        5: destroy_operators.random_teacher_removal
+        # 6: destroy_operators.restricted_roomcourse_removal
     }
 
     # Initial weights of repair operators set to 1

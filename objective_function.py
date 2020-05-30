@@ -115,9 +115,9 @@ class objective_function:
                     if check_for_windows:
                         curriculum_windows += 1
                     for k in range(self.instance_data.rooms_count):
-                        if current_solution[i][j][k] != "":
-                            course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
-                            if check_for_windows and course is not None:
+                        course = current_solution[i][j][k]
+                        if course != "":
+                            if check_for_windows and course in curriculum.courses:
                                 penalty += curriculum_windows - 1
                                 curriculum_penalties[curriculum.id] += curriculum_windows - 1
                                 curriculum_windows = 0
@@ -200,34 +200,31 @@ class objective_function:
         penalty = 0
 
         for curriculum in self.instance_data.curricula:
-                for i in range(self.instance_data.days):
-                    curriculum_periods = []
-                    for j in range(self.instance_data.periods_per_day):
-                        curriculum_in_day = False
-                        for k in range(self.instance_data.rooms_count):
-                            if current_solution[i][j][k] != "":
-                                course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
-                                if course is not None:
-                                    curriculum_in_day = True
-                                    break
+            for i in range(self.instance_data.days):
+                curriculum_periods = []
+                for j in range(self.instance_data.periods_per_day):
+                    curriculum_in_day = False
+                    for k in range(self.instance_data.rooms_count):
+                        course = current_solution[i][j][k]
+                        if course != "" and course in curriculum.courses:
+                            curriculum_in_day = True
+                            break
+                    if curriculum_in_day:
+                        curriculum_periods.append(1)
+                    else:
+                        curriculum_periods.append(0)
 
-                        if curriculum_in_day:
-                            curriculum_periods.append(1)
-                        else:
-                            curriculum_periods.append(0)
-
-                    for l in range(self.instance_data.periods_per_day):
-                        if curriculum_periods[l] == 1:
-                            if l == 0 and curriculum_periods[l+1] == 0:
-                                penalty += self.penalties.isolated_lectures_penalty
-
-                                curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
-                            elif l == self.instance_data.periods_per_day - 1 and curriculum_periods[l-1] == 0:
-                                penalty += self.penalties.isolated_lectures_penalty
-                                curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
-                            elif curriculum_periods[l-1] == 0 and curriculum_periods[l+1] == 0:
-                                curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
-                                penalty += self.penalties.isolated_lectures_penalty
+                for l in range(self.instance_data.periods_per_day):
+                    if curriculum_periods[l] == 1:
+                        if l == 0 and curriculum_periods[l+1] == 0:
+                            penalty += self.penalties.isolated_lectures_penalty
+                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
+                        elif l == self.instance_data.periods_per_day - 1 and curriculum_periods[l-1] == 0:
+                            penalty += self.penalties.isolated_lectures_penalty
+                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
+                        elif curriculum_periods[l-1] == 0 and curriculum_periods[l+1] == 0:
+                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
+                            penalty += self.penalties.isolated_lectures_penalty
 
         return penalty, curriculum_penalties
 

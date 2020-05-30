@@ -46,17 +46,16 @@ class destroy_operators:
             a = sorted_curriculum_penalties[index_for_removal]
             del sorted_curriculum_penalties[index_for_removal]
 
+            curriculum = next((x for x in instance_data.curricula if x.id == a[0]), None)
+
             for i in range(instance_data.days):
                 for j in range(instance_data.periods_per_day):
                     for k in range(len(instance_data.rooms)):
                         lecture = schedule[i][j][k]
-                        if lecture != "":
-                            curriculum = next((x for x in instance_data.curricula if x.id == a[0]), None)
-                            course = next((c for c in curriculum.courses if c == lecture), None)
-                            if course is not None:
-                                lectures_removed.append(lecture)
-                                schedule[i][j][k] = ""
-                                destroy_limit -= 1
+                        if lecture != "" and lecture in curriculum.courses:
+                            lectures_removed.append(lecture)
+                            schedule[i][j][k] = ""
+                            destroy_limit -= 1
 
         print("Removed lectures: ", lectures_removed)
         return schedule, lectures_removed

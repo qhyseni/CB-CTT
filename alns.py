@@ -43,7 +43,10 @@ class alns:
     
         # Calculate cost/objective function of current solution
         current_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(solution)
-    
+        avg_cost = current_cost / self.instance_data.total_lectures
+        unassigned_lectures_cost = max(double(1), double(avg_cost))
+        current_cost += unassigned_lectures_cost * len(Uc)
+
         global_best = current_best
         global_best_cost = current_cost
 
@@ -67,7 +70,7 @@ class alns:
             repair_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.repair_operators_weights)
             print("Repair Operators Probabilities: ", repair_operators_probabilities)
             repair_operator_index = roulette_wheel_selection.spin_roulettewheel(repair_operators_probabilities)
-            # repair_operator_index = 0
+            repair_operator_index = 0
 
             lecture_period_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.lecture_period_operators_weights)
             print("Lecture-Period Operators Probabilities: ", lecture_period_operators_probabilities)
@@ -94,20 +97,27 @@ class alns:
                 # Calculate the new solution's cost
                 new_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(new_sol)
                 print("New solution cost: ", new_cost)
+
+                temp_cost = new_cost + len(Uc) * unassigned_lectures_cost
                 # The acceptance probability function takes in the old cost, new cost, and current temperature
                 # and spits out a number between 0 and 1, which is a sort of recommendation on whether or not to jump to the new solution.
-                accept = SA.accept_new_solution(new_cost, current_cost, remaining_iterations)
+                accept = SA.accept_new_solution(temp_cost, current_cost, remaining_iterations)
 
                 score_w1 = 0
                 score_w2 = 0
                 score_w3 = 0
 
                 if accept:
+
+                    if len(Uc) > 0:
+                        unassigned_lectures_cost = min(unassigned_lectures_cost * parameters.adjust_unscheduled_cost,
+                                                       double(self.instance_data.max_cost))
+                    else:
+                        unassigned_lectures_cost = max(double(1), unassigned_lectures_cost / parameters.adjust_unscheduled_cost)
+
                     statistics.accepted_count += 1
                     print("New solution accepted.")
-                    solution = new_sol
-                    current_cost = new_cost
-                    if new_cost > current_cost: # worse than current solution
+                    if temp_cost > current_cost: # worse than current solution
                         print("New solution is worse than the current solution.")
                         statistics.worse_count += 1
                         score_w3 = parameters.w3
@@ -115,10 +125,13 @@ class alns:
                         print("New solution is better than the current solution.")
                         statistics.better_count += 1
                         score_w2 = parameters.w2
+
+                    solution = new_sol
+                    current_cost = temp_cost
                 else:
                     print("New solution NOT accepted.")
 
-                if new_cost < global_best_cost:
+                if new_cost < global_best_cost and len(Uc) == 0:
                     print("New solution is the global best.")
                     statistics.global_best_counts += 1
                     statistics.iteration_best = iteration
@@ -176,18 +189,14 @@ class alns:
                  removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
                  courses_penalties, curricula_penalties, Uc):
 
-        lectures_counter = 0
-        for course in self.instance_data.courses:
-            lectures_counter += int(course.lectures)
-    
         #  The reference destroy limit nmax 0 is set to d percent of the total number of lectures.
         #  It turns out that the usage of different percentages depending on the instance size is beneficial,
         #  i.e., ds is used for small instances with less than 280 lectures and dl for larger instances.
     
-        if lectures_counter <= 280:
-            reference_destroy_limit = math.floor(parameters.ds * lectures_counter)
+        if self.instance_data.total_lectures <= 280:
+            reference_destroy_limit = math.floor(parameters.ds * self.instance_data.total_lectures )
         else:
-            reference_destroy_limit = math.floor(parameters.dl * lectures_counter)
+            reference_destroy_limit = math.floor(parameters.dl * self.instance_data.total_lectures )
 
         print("Reference Destroy Limit: ", reference_destroy_limit)
         expected_iteration_limit = remaining_iterations + iteration
@@ -207,7 +216,7 @@ class alns:
         elif removal_operator_index == 1:
             schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, curricula_penalties)
         else:
-            schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
+                schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data)
 
         # append lectured left unscheduled from prev row
         for l in Uc:

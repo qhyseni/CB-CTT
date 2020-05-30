@@ -14,7 +14,8 @@ import time
 #              'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
 #
 
-instances = ['comp01']
+instances = ['comp01'
+             '']
 # IL = [50, 100, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12000]
 IL = [6000, 8000, 12000, 20000]
 

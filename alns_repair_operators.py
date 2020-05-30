@@ -44,28 +44,27 @@ class repair_operators:
 
         return available_periods
 
-    def check_periods_conflicts(schedule, instance_data, course):
+    def check_course_conflicts(schedule, instance_data, course):
 
-        course_conflicts = {}
+        course_conflicts = []
+        course_conflicts_count = 0
         current_course = next(
             (i for i in instance_data.courses if i.id == course), None)
         course_curricula = [i for i in instance_data.curricula if course in i.courses]
 
-        for d in range(instance_data.days):
-            for p in range(instance_data.periods_per_day):
-                for r in range(instance_data.rooms_count):
-                    scheduled_course = next(
-                        (i for i in instance_data.courses if i.id == schedule[d][p][r]), None)
+        for c in instance_data.courses:
+            if c.id != course:
+                for q in course_curricula:
+                    if c.id in q.courses and c not in course_conflicts:
+                        course_conflicts.append(c)
 
-                    if scheduled_course is not None and scheduled_course.id != course:
-                        for q in course_curricula:
-                            if scheduled_course.id in q.courses:
-                                course_conflicts[scheduled_course.id] = [d, p]
+                if c.teacher_id == current_course.teacher_id and c not in course_conflicts:
+                    course_conflicts.append(c)
 
-                        if scheduled_course.teacher_id == current_course.teacher_id:
-                            course_conflicts[scheduled_course.id] = [d, p]
+        for conflict_course in course_conflicts:
+            course_conflicts_count += int(conflict_course.lectures)
 
-        return course_conflicts
+        return course_conflicts_count
 
     def is_period_available(schedule, instance_data, course, period_lecture_assignments, d, p):
 
@@ -100,8 +99,8 @@ class repair_operators:
             for q in course_curricula:
                 if assigned_course.id in q.courses:
                     return False
-                if assigned_course.teacher_id == course.teacher_id:
-                    return False
+            if assigned_course.teacher_id == course.teacher_id:
+                return False
 
         # if there are rooms available from the fixed schedule, check how many lectures are assigned to this period in previous stages
         # so we make sure we don't assign more lectures than rooms in any period
@@ -329,7 +328,8 @@ class repair_operators:
                     # which might be beneficial with regard to the room stability
                     if lecture_room_heuristic == "greatest" and cost == min_cost and int(room.size) > int(instance_data.rooms[selected_room].size):
                         selected_room = r
-                    # ties are broken by preferring the room with smallest capacity
+                    # ties are broken by preferring the room with smallest capaci'
+                    # ty
                     # the reason is that since lectures are schedules in a random order,
                     # there might be lectures that are processed later and require large rooms
                     elif lecture_room_heuristic == "match" and cost == min_cost and int(room.size) < int(instance_data.rooms[selected_room].size):
@@ -591,10 +591,18 @@ class repair_operators:
 
             courses_to_schedule_length = len(courses_to_schedule)
             try:
-                for i in range(courses_to_schedule_length):
-                    cost += max(0, (int(courses_to_schedule[i].students) - int(available_rooms[i].size)))
+                # in cases of backtracking when the period is not available due to the fact that there are no more available rooms
+                # we will be evaluating which period results in more conflicts so we decide from which to remove courses
+                # namely, when we come at this step we will already be having more courses we want to assign to the period
+                # because we havent decided yet from which to remove, and if we want to evaluate this we suppose that we will remove courses
+                # form this period, and we calculate the cost only by the difference of the course we want to schedule and the available rooms
+                if (courses_to_schedule_length > len(available_rooms)):
+                   cost += max(0, (int(course.students) - int(available_rooms[0].size)))
+                else:
+                    for i in range(courses_to_schedule_length):
+                        cost += max(0, (int(courses_to_schedule[i].students) - int(available_rooms[i].size)))
             except:
-                print("")
+                print("QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA QENDRESA")
 
             cost = cost * penalty_instance.get_room_capacity_penalty()
 

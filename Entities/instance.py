@@ -1,6 +1,10 @@
+from Entities.penalty import penalty
+
 class instance:
 
     def __init__(self, raw_data):
+
+        penalties = penalty("UD2")
 
         # Number of available days (working days of University)
         self.days = raw_data.days()
@@ -20,6 +24,8 @@ class instance:
         # List of rooms available for lectures at University
         self.rooms = raw_data.rooms()
 
+        self.sorted_rooms = self.rooms.sort(key=lambda x: int(x.size), reverse=True)
+
         # List of curricula (programs) at University
         self.curricula = raw_data.curricula()
 
@@ -33,6 +39,21 @@ class instance:
         self.rooms_count = len(self.rooms)
 
         self.teachers = self.get_teachers()
+
+        self.total_lectures = 0
+        self.max_cost = 0
+        for course in self.instance_data.courses:
+            self.total_lectures += int(course.lectures)
+
+            course_curricula = [q for q in self.curricula if course.id in q.courses]
+            temp_max_cost = \
+                max(0, int(course.students) - sorted_rooms[self.rooms_count - 1]) * penalties.room_capacity_penalty \
+                + len(course_curricula) * penalties.isolated_lectures_penalty
+            if temp_max_cost > self.max_cost:
+                self.max_cost = temp_max_cost
+
+        self.max_cost += penalties.room_stability_penalty
+
 
     def get_teachers(self):
         teachers = []

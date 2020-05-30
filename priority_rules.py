@@ -27,8 +27,7 @@ class priority_rules:
         # The Largest Degree rule prioritizes courses with the largest number of conflicts with other courses
         c_conflicts_count = {}
         for c in unscheduled_courses:
-            c_conflicts = repair_operators.check_periods_conflicts(schedule, instance_data, c)
-            c_conflicts_count[c] = len(c_conflicts)
+            c_conflicts_count[c] = repair_operators.check_course_conflicts(schedule, instance_data, c)
 
         c_sorted = {k: v for k, v in sorted(c_conflicts_count.items(), key = lambda item:item[1], reverse=True)}
 
