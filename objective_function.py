@@ -92,7 +92,7 @@ class objective_function:
                     course_days += 1
 
             if course_days < min_days:
-                cost = (min_days - course_days) * self.penalties.min_wdays_penalty
+                cost = (min_days - course_days) * self.penalties.P_DAYS
                 penalty += cost
                 course_penalties[course.id] += cost
 
@@ -217,14 +217,14 @@ class objective_function:
                 for l in range(self.instance_data.periods_per_day):
                     if curriculum_periods[l] == 1:
                         if l == 0 and curriculum_periods[l+1] == 0:
-                            penalty += self.penalties.isolated_lectures_penalty
-                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
+                            penalty += self.penalties.P_COMP
+                            curriculum_penalties[curriculum.id] += self.penalties.P_COMP
                         elif l == self.instance_data.periods_per_day - 1 and curriculum_periods[l-1] == 0:
-                            penalty += self.penalties.isolated_lectures_penalty
-                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
+                            penalty += self.penalties.P_COMP
+                            curriculum_penalties[curriculum.id] += self.penalties.P_COMP
                         elif curriculum_periods[l-1] == 0 and curriculum_periods[l+1] == 0:
-                            curriculum_penalties[curriculum.id] += self.penalties.isolated_lectures_penalty
-                            penalty += self.penalties.isolated_lectures_penalty
+                            curriculum_penalties[curriculum.id] += self.penalties.P_COMP
+                            penalty += self.penalties.P_COMP
 
         return penalty, curriculum_penalties
 
@@ -247,8 +247,8 @@ class objective_function:
                                     break
                                 elif course_room != room and room not in course_rooms:
                                     course_rooms.append(room)
-                                    penalty += self.penalties.room_stability_penalty
-                                    course_penalties[course.id] += self.penalties.room_stability_penalty
+                                    penalty += self.penalties.P_STAB
+                                    course_penalties[course.id] += self.penalties.P_STAB
 
         return penalty, course_penalties
 

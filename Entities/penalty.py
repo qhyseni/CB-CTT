@@ -9,7 +9,7 @@ class penalty:
         elif self._type == 'UD4':
             return 1
 
-    room_capacity_penalty = property(get_room_capacity_penalty)
+    P_CAP = property(get_room_capacity_penalty)
 
     def get_min_wdays_penalty (self):
         if self._type == 'UD2':
@@ -17,7 +17,7 @@ class penalty:
         elif self._type == 'UD4':
             return 1
 
-    min_wdays_penalty = property(get_min_wdays_penalty)
+    P_DAYS = property(get_min_wdays_penalty)
 
     def get_windows_penalty (self):
         if self._type == 'UD2':
@@ -25,7 +25,7 @@ class penalty:
         elif self._type == 'UD4':
             return 1
 
-    windows_penalty = property(get_windows_penalty)
+    P_WIND = property(get_windows_penalty)
 
     def get_minmax_load_penalty(self):
         if self._type == 'UD2':
@@ -33,7 +33,7 @@ class penalty:
         elif self._type == 'UD4':
             return 1
 
-    minmax_load_penalty = property(get_minmax_load_penalty)
+    P_LOAD = property(get_minmax_load_penalty)
 
     def get_double_lectures_penalty(self):
         if self._type == 'UD2':
@@ -41,7 +41,7 @@ class penalty:
         elif self._type == 'UD4':
             return 1
 
-    double_lectures_penalty = property(get_double_lectures_penalty)
+    P_DOUBLE = property(get_double_lectures_penalty)
 
     def get_isolated_lectures_penalty(self):
         if self._type == 'UD2':
@@ -49,7 +49,7 @@ class penalty:
         elif self._type == 'UD4':
             return None
 
-    isolated_lectures_penalty = property(get_isolated_lectures_penalty)
+    P_COMP = property(get_isolated_lectures_penalty)
 
     def get_room_stability_penalty(self):
         if self._type == 'UD2':
@@ -57,4 +57,4 @@ class penalty:
         elif self._type == 'UD4':
             return None
 
-    room_stability_penalty = property(get_room_stability_penalty)
+    P_STAB = property(get_room_stability_penalty)

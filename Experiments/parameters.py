@@ -34,7 +34,7 @@ class parameters:
     # in turn could outweigh the gain in performance resulting from the larger number of iterations.
     # Consequently, when setting the decreasing parameter δ, this trade-off has to be taken into
     # account
-    destroy_decrease_parameter = 3
+    destroy_decrease = 3
 
     # The probability of selecting
     # very related lectures is controlled by the parameter κ.
@@ -44,3 +44,8 @@ class parameters:
 
     # multiply or divide unassigned penalty/cost if solution is infeasible or feasible, respectively
     adjust_unscheduled_cost = 1.001
+
+    # reheats limit
+    reheat_limit = 60000
+    # always remove at least 10 lectures
+    min_destroy_lectures = 10

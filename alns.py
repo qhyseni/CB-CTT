@@ -31,6 +31,14 @@ class alns:
 
         self.instance_data = instance(raw_data)
 
+        #  It turns out that the usage of different percentages depending on the instance size is beneficial,
+        #  i.e., ds is used for small instances with less than 280 lectures and dl for larger instances.
+        if self.instance_data.total_lectures <= 280:
+            self.destroy_permille = parameters.ds
+        else:
+            self.destroy_permille = parameters.dl
+
+
     # main function to find solution of CB-CTT instance using ALNS
     def find_optimal_solution(self, solution, Uc):
         # reset statistics value
@@ -50,14 +58,26 @@ class alns:
         global_best = current_best
         global_best_cost = current_cost
 
+        #  The reference destroy limit nmax 0 is set to d percent of the total number of lectures.
+        # calculate upper bound for events to be destoryed
+        destroy_upper_bound = self.instance_data.total_lectures * self.destroy_permille / 1000
+        iteration = 0
+        no_best_found_count = 0
+        # destroy limit based on iterations since limit -> limit increased after reheat
+        iterations_since_reheat = 0
+        remaining_iterations = parameters.iteration_limit
+        ref_iter_limit = parameters.iteration_limit
+
         time_start = time.time()
     
         SA = simulated_annealing(current_cost)
-    
-        iteration = 0
 
         while (time.time() - time_start) < parameters.time_limit:
+            deviation_ref_iter = (remaining_iterations + iterations_since_reheat) - ref_iter_limit
+            destroy_decrease_power = math.log((parameters.destroy_decrease - 1) * destroy_upper_bound / parameters.destroy_decrease) \
+                                     / math.log(ref_iter_limit + deviation_ref_iter)
             iteration += 1
+            iterations_since_reheat += 1
             statistics.iterations += 1
             print("Iteration: ", iteration)
             remaining_iterations = parameters.iteration_limit - ((time.time()-time_start)/parameters.time_limit) * parameters.iteration_limit
@@ -87,9 +107,14 @@ class alns:
             priority_rule_index = roulette_wheel_selection.spin_roulettewheel(priority_rules_probabilities)
 
             # -------------------------------------------------------------------------------------------------------------------- #
+            # number of events to be destroyed (lectures to remove) in this iteration
+            destroy_limit = min(self.instance_data.total_lectures - Uc, parameters.min_destroy_lectures +
+                                (random.randint() % (max(parameters.min_destroy_lectures, destroy_upper_bound
+                                                         - math.pow(iterations_since_reheat, destroy_decrease_power)))))
+
 
             # Find neighbor solution by applying destruction/repair operator to the current solution
-            new_sol, Uc = self.neighbor(solution, iteration, remaining_iterations,
+            new_sol, Uc = self.neighbor(solution, destroy_limit,
                                     removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
                                     courses_penalties, curricula_penalties, Uc)
 
@@ -140,6 +165,15 @@ class alns:
                     global_best_cost = new_cost
                     score_w1 = parameters.w1
 
+                if no_best_found_count >= parameters.reheat_limit and iteration < parameters.iteration_limit:
+                    simulated_annealing.reheat(new_cost)
+                    no_best_found_count = 0
+                    statistics.reheats_count += 1
+                    iterations_since_reheat = 0
+                    ref_iter_limit = remaining_iterations
+                else:
+                    no_best_found_count += 1
+
                 print("Score W1: ", score_w1)
                 print("Score W2: ", score_w3)
                 print("Score W3: ", score_w3)
@@ -185,26 +219,10 @@ class alns:
         statistics_instance.print_statistics()
         return global_best, global_best_cost
     
-    def neighbor(self, solution, iteration, remaining_iterations,
+    def neighbor(self, solution, destroy_limit,
                  removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
                  courses_penalties, curricula_penalties, Uc):
 
-        #  The reference destroy limit nmax 0 is set to d percent of the total number of lectures.
-        #  It turns out that the usage of different percentages depending on the instance size is beneficial,
-        #  i.e., ds is used for small instances with less than 280 lectures and dl for larger instances.
-    
-        if self.instance_data.total_lectures <= 280:
-            reference_destroy_limit = math.floor(parameters.ds * self.instance_data.total_lectures )
-        else:
-            reference_destroy_limit = math.floor(parameters.dl * self.instance_data.total_lectures )
-
-        print("Reference Destroy Limit: ", reference_destroy_limit)
-        expected_iteration_limit = remaining_iterations + iteration
-        print("Expected Iteration Limit: ", expected_iteration_limit)
-        destroy_limit = math.floor(reference_destroy_limit
-                                   - math.pow(iteration, math.log((((parameters.destroy_decrease_parameter - 1)
-                                                                    / parameters.destroy_decrease_parameter)
-                                                                   * reference_destroy_limit), expected_iteration_limit)))
         print("Destroy Limit: ", destroy_limit)
         lectures_to_remove = random.randint(1, destroy_limit)
         print("Lectures to remove number: ", lectures_to_remove)

@@ -47,12 +47,12 @@ class instance:
 
             course_curricula = [q for q in self.curricula if course.id in q.courses]
             temp_max_cost = \
-                max(0, int(course.students) - sorted_rooms[self.rooms_count - 1]) * penalties.room_capacity_penalty \
-                + len(course_curricula) * penalties.isolated_lectures_penalty
+                max(0, int(course.students) - self.sorted_rooms[self.rooms_count - 1]) * penalties.P_CAP \
+                + len(course_curricula) * penalties.P_COMP
             if temp_max_cost > self.max_cost:
                 self.max_cost = temp_max_cost
 
-        self.max_cost += penalties.room_stability_penalty
+        self.max_cost += penalties.P_STAB
 
 
     def get_teachers(self):

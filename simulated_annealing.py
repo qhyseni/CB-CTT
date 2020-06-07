@@ -35,6 +35,16 @@ class simulated_annealing:
             cost_diff = new_cost - old_cost
             return math.e ** (-(cost_diff) / self.temperature)
 
+    def reheat(self, solution_cost):
+
+        # SA: initially accept 4% worse solution than the initial solution with a probability of 50%
+
+        if solution_cost == 0:
+            # temperature must not be zero
+            solution_cost += 1
+        self.temperature = - parameters.init_deterioriation / math.log(parameters.initial_acceptance) * solution_cost
+        print("Simulated Annealing Reheat Temperature: ", self.temperature)
+
 
 
 
