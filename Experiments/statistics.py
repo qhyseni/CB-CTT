@@ -35,6 +35,8 @@ class statistics:
     global_best_counts = 0
     reheats_count = 0
 
+    unsat: int = 0
+
     def reset(self):
 
         statistics.test = 0
@@ -70,6 +72,7 @@ class statistics:
         statistics. worse_count = 0
         statistics.global_best_counts = 0
         statistics.reheats_count = 0
+        statistics.unsat = 0
 
     def print_statistics(self):
 
@@ -105,5 +108,6 @@ class statistics:
         print("Statistics - Worse Solutions: ", statistics.worse_count)
         print("Statistics - Global Best Solutions: ", statistics.global_best_counts)
         print("Statistics - Number of Reheats: ", statistics.reheats_count)
+        print("Statistics - UnSAT: ", statistics.unsat)
 
 

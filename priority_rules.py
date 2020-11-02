@@ -7,7 +7,6 @@ class priority_rules:
 
     def saturation_degree_order(schedule, instance_data, unscheduled_courses, period_lecture_assignments):
         print("Saturation Degree Priority Rule")
-        statistics.saturation_degree_count += 1
         # The Saturation Degree rule arranges courses in ascending order
         # with respect to their number of available periods for scheduling
         c_periods_count = {}
@@ -23,7 +22,6 @@ class priority_rules:
 
     def largest_degree_order(schedule, instance_data, unscheduled_courses, period_lecture_assignments):
         print("Largest Degree Priority Rule")
-        statistics.largest_degree_count += 1
         # The Largest Degree rule prioritizes courses with the largest number of conflicts with other courses
         c_conflicts_count = {}
         for c in unscheduled_courses:
@@ -35,7 +33,6 @@ class priority_rules:
 
     def random_order(schedule, instance_data, unscheduled_courses, period_lecture_assignments):
         print("Random Order Priority Rule")
-        statistics.random_order_count += 1
         # The Random rule orders courses randomly
         shuffle(unscheduled_courses)
         return unscheduled_courses

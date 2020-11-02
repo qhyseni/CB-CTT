@@ -24,7 +24,7 @@ class instance:
         # List of rooms available for lectures at University
         self.rooms = raw_data.rooms()
 
-        self.sorted_rooms = self.rooms.sort(key=lambda x: int(x.size), reverse=True)
+        # self.sorted_rooms = self.rooms.sort(key=lambda x: int(x.size), reverse=True)
 
         # List of curricula (programs) at University
         self.curricula = raw_data.curricula()
@@ -42,12 +42,16 @@ class instance:
 
         self.total_lectures = 0
         self.max_cost = 0
-        for course in self.instance_data.courses:
+
+        sorted_rooms = sorted(self.rooms, key=lambda x: int(x.size), reverse=True)
+        smallest_room_size = int(sorted_rooms[self.rooms_count - 1].size)
+        for course in self.courses:
             self.total_lectures += int(course.lectures)
 
             course_curricula = [q for q in self.curricula if course.id in q.courses]
+
             temp_max_cost = \
-                max(0, int(course.students) - self.sorted_rooms[self.rooms_count - 1]) * penalties.P_CAP \
+                max(0, int(course.students) - smallest_room_size) * penalties.P_CAP \
                 + len(course_curricula) * penalties.P_COMP
             if temp_max_cost > self.max_cost:
                 self.max_cost = temp_max_cost

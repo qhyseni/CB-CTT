@@ -10,7 +10,8 @@ class parameters:
     w3 = 18  # score for better than current solution
 
     time_limit = 480 # execution time for ALNS
-    iteration_limit = 200000 # iteraions limit for ALNS
+    iteration_limit = 500 # iteraions limit for ALNS
+    # iteration_limit = 200000 # iteraions limit for ALNS
 
     # time_limit = 25 # execution time for ALNS
     # iteration_limit = 100 # iteraions limit for ALNS
@@ -25,8 +26,8 @@ class parameters:
     #  The reference destroy limit nmax 0 is set to d percent of the total number of lectures.
     #  It turns out that the usage of different percentages depending on the instance size is beneficial,
     #  i.e., ds is used for small instances with less than 280 lectures and dl for larger instances.
-    ds = 0.30 # Destroy limit: small instances
-    dl = 0.25 # Destroy limit: large instances
+    ds = 0.30 # Destroy limit: small instances 30%
+    dl = 0.25 # Destroy limit: large instances 25%
 
     # Decreasing the destroy limit considerably increases the number of iterations within a given
     # time limit, since repairing smaller parts of a solution typically requires less computation time.
@@ -46,6 +47,7 @@ class parameters:
     adjust_unscheduled_cost = 1.001
 
     # reheats limit
-    reheat_limit = 60000
+    reheat_limit = 50
+    # reheat_limit = 60000
     # always remove at least 10 lectures
     min_destroy_lectures = 10

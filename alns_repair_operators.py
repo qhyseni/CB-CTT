@@ -306,13 +306,11 @@ class repair_operators:
             # sort courses in ascending order by number of students
             if lecture_room_heuristic == "greatest":
                 print("Greatest Heuristic")
-                statistics.two_stage_greatest_count += 1
                 courses_to_schedule.sort(key=lambda x : int(x.students),reverse=True)
             # type 2: match heuristic
             # sort courses randomly
             elif lecture_room_heuristic == "match" or lecture_room_heuristic is None:
                 print("Match Heuristic")
-                statistics.two_stage_match_count += 1
                 random.shuffle(courses_to_schedule)
 
             for c in courses_to_schedule:
@@ -347,8 +345,6 @@ class repair_operators:
 
     def evaluate_insertion_positions(schedule, instance_data, unscheduled_lectures, period_lecture_assignments, course, available_periods, lecture_period_heuristic):
 
-        if course.id == "c0002":
-            print("")
         course_period_cost = {}
 
         index = 0
@@ -576,7 +572,6 @@ class repair_operators:
 
         if lecture_period_heuristic == "best":
             print("2-stage Best Heuristic")
-            statistics.two_stage_best_count += 1
 
             courses_to_schedule = [x.course for x in period_lecture_assignments if x.day == day and x.period == period]
             courses_to_schedule.append(course)
@@ -616,7 +611,6 @@ class repair_operators:
         # the capacity limit of the considered period.
         elif lecture_period_heuristic == "mean":
             print("2-stage Mean Heuristic")
-            statistics.two_stage_mean_count += 1
 
             available_capacity = 0
             required_capacity = 0

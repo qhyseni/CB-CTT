@@ -85,7 +85,7 @@ class maxSAT:
 
             return schedule, Uc
         else:
-            return None, None
+            return None, Uc
 
 
 

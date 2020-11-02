@@ -1,22 +1,17 @@
 import xml_to_od
 import ectt_to_od
 from Entities.instance import instance
-from Entities.xml_instance import xml_instance
 from objective_function import objective_function
 from initial_solution import initial_solution
 from roulette_wheel_selection import roulette_wheel_selection
 from simulated_annealing import simulated_annealing
-from alns_destroy_operators import destroy_operators
-from alns_repair_operators import repair_operators
 from operators_lookup import operators_lookup
-from maxSAT_repair_operator import maxSAT
 import random
 import math
 import os
 import time
 from Experiments.parameters import parameters
 from Experiments.configs import configs
-from itertools import product
 from Experiments.statistics import statistics
 
 class alns:
@@ -52,15 +47,18 @@ class alns:
         # Calculate cost/objective function of current solution
         current_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(solution)
         avg_cost = current_cost / self.instance_data.total_lectures
-        unassigned_lectures_cost = max(double(1), double(avg_cost))
+        unassigned_lectures_cost = max(float(1), float(avg_cost))
         current_cost += unassigned_lectures_cost * len(Uc)
 
         global_best = current_best
         global_best_cost = current_cost
 
+        if global_best_cost == 0:
+            return global_best, global_best_cost
+
         #  The reference destroy limit nmax 0 is set to d percent of the total number of lectures.
         # calculate upper bound for events to be destoryed
-        destroy_upper_bound = self.instance_data.total_lectures * self.destroy_permille / 1000
+        destroy_upper_bound = self.instance_data.total_lectures * self.destroy_permille
         iteration = 0
         no_best_found_count = 0
         # destroy limit based on iterations since limit -> limit increased after reheat
@@ -86,6 +84,7 @@ class alns:
             removal_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.removal_operators_weights)
             print("Removal Operators Probabilities: ", removal_operators_probabilities)
             removal_operator_index = roulette_wheel_selection.spin_roulettewheel(removal_operators_probabilities)
+            removal_operator_index = 5
 
             repair_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.repair_operators_weights)
             print("Repair Operators Probabilities: ", repair_operators_probabilities)
@@ -96,22 +95,36 @@ class alns:
             print("Lecture-Period Operators Probabilities: ", lecture_period_operators_probabilities)
             lecture_period_operator_index = roulette_wheel_selection.spin_roulettewheel(lecture_period_operators_probabilities)
             # lecture_period_operator_index = 0
+            if lecture_period_operator_index == 0:
+                statistics.two_stage_best_count += 1
+            elif lecture_period_operator_index == 1:
+                statistics.two_stage_mean_count += 1
 
             lecture_room_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.lecture_room_operators_weights)
             print("Lecture-Room Operators Probabilities: ", lecture_period_operators_probabilities)
             lecture_room_operator_index = roulette_wheel_selection.spin_roulettewheel(lecture_room_operators_probabilities)
             # lecture_room_operator_index = 0
+            if lecture_period_operator_index == 0:
+                statistics.two_stage_greatest_count += 1
+            elif lecture_period_operator_index == 1:
+                statistics.two_stage_match_count += 1
 
             priority_rules_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.priority_rules_weights)
             print("Priority Rules Probabilities: ", lecture_period_operators_probabilities)
             priority_rule_index = roulette_wheel_selection.spin_roulettewheel(priority_rules_probabilities)
+            if lecture_period_operator_index == 0:
+                statistics.saturation_degree_count += 1
+            elif lecture_period_operator_index == 1:
+                statistics.largest_degree_count += 1
+            else:
+                statistics.random_order_count += 1
+
+
 
             # -------------------------------------------------------------------------------------------------------------------- #
             # number of events to be destroyed (lectures to remove) in this iteration
-            destroy_limit = min(self.instance_data.total_lectures - Uc, parameters.min_destroy_lectures +
-                                (random.randint() % (max(parameters.min_destroy_lectures, destroy_upper_bound
-                                                         - math.pow(iterations_since_reheat, destroy_decrease_power)))))
-
+            destroy_limit = min(self.instance_data.total_lectures - len(Uc), parameters.min_destroy_lectures +
+                                (random.randrange(max(parameters.min_destroy_lectures, destroy_upper_bound - round(math.pow(iterations_since_reheat, destroy_decrease_power))))))
 
             # Find neighbor solution by applying destruction/repair operator to the current solution
             new_sol, Uc = self.neighbor(solution, destroy_limit,
@@ -136,9 +149,9 @@ class alns:
 
                     if len(Uc) > 0:
                         unassigned_lectures_cost = min(unassigned_lectures_cost * parameters.adjust_unscheduled_cost,
-                                                       double(self.instance_data.max_cost))
+                                                       float(self.instance_data.max_cost))
                     else:
-                        unassigned_lectures_cost = max(double(1), unassigned_lectures_cost / parameters.adjust_unscheduled_cost)
+                        unassigned_lectures_cost = max(float(1), unassigned_lectures_cost / parameters.adjust_unscheduled_cost)
 
                     statistics.accepted_count += 1
                     print("New solution accepted.")
@@ -166,13 +179,16 @@ class alns:
                     score_w1 = parameters.w1
 
                 if no_best_found_count >= parameters.reheat_limit and iteration < parameters.iteration_limit:
-                    simulated_annealing.reheat(new_cost)
+                    SA.reheat(new_cost)
                     no_best_found_count = 0
                     statistics.reheats_count += 1
                     iterations_since_reheat = 0
                     ref_iter_limit = remaining_iterations
                 else:
                     no_best_found_count += 1
+
+                if global_best_cost == 0:
+                    return global_best, global_best_cost
 
                 print("Score W1: ", score_w1)
                 print("Score W2: ", score_w3)
@@ -229,6 +245,8 @@ class alns:
 
         # different destroy operators expect different input parameters
         # we are handling it accordingly below
+        # QENDRESA remove line below
+        removal_operator_index = 5
         if removal_operator_index == 0:
             schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, courses_penalties)
         elif removal_operator_index == 1:
@@ -240,6 +258,10 @@ class alns:
         for l in Uc:
             lectures_removed.append(l)
 
+        repair_operator_index = 0
+        lecture_period_operator_index = 0
+        lecture_room_operator_index = 0
+        priority_rule_index = 0
         if repair_operator_index == 0:
             schedule, Uc = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed,
                                                                                 operators_lookup.lecture_period_operators[lecture_period_operator_index],
@@ -262,19 +284,19 @@ class alns:
         # --------------------------------------------------
 
         # ---------------------------------------------------------------
-        try:
-            os.remove('/tmp/initial_solution')
-        except OSError:
-            pass
-        with open('/tmp/initial_solution', 'a+') as f:
-            # print solution  to console
-            for i in range(self.instance_data.days):
-                for j in range(self.instance_data.periods_per_day):
-                    for k in range(len(self.instance_data.rooms)):
-                        if init_sol[i][j][k] != "":
-                            line = init_sol[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
-                            f.write(line)
+        # try:
+        #     os.remove('/tmp/initial_solution')
+        # except OSError:
+        #     pass
+        # with open('/tmp/initial_solution', 'a+') as f:
+        #     # print solution  to console
+        #     for i in range(self.instance_data.days):
+        #         for j in range(self.instance_data.periods_per_day):
+        #             for k in range(len(self.instance_data.rooms)):
+        #                 if init_sol[i][j][k] != "":
+        #                     line = init_sol[i][j][k] + " " + self.instance_data.rooms[k].id + " " + str(i) + " " + str(j) + '\n'
+        #                     f.write(line)
 
         schedule, cost = self.find_optimal_solution(init_sol, Uc)
 
-        return schedule, cost, Uc
+        return schedule, cost

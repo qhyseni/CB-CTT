@@ -31,11 +31,74 @@ class initial_solution:
             for lecture in range(lectures_counter):
                 unscheduled_lectures.append(course.id)
 
-        initial_solution = repair_operators.two_stage_repair_operator(schedule, self.instance_data, unscheduled_lectures, "best", "greatest", operators_lookup.priority_rules[0])
+        initial_solution, Uc = repair_operators.two_stage_repair_operator(schedule, self.instance_data, unscheduled_lectures, "best", "greatest", operators_lookup.priority_rules[0])
 
+        initial_solution[0][0][0] = 'c4'
+        initial_solution[0][0][1] = 'c1'
+        initial_solution[0][0][2] = ''
+
+        initial_solution[0][1][0] = 'c9'
+        initial_solution[0][1][1] = 'c2'
+        initial_solution[0][1][2] = ''
+
+        initial_solution[0][2][0] = 'c1'
+        initial_solution[0][2][1] = 'c8'
+        initial_solution[0][2][2] = ''
+
+        initial_solution[0][3][0] = 'c3'
+        initial_solution[0][3][1] = 'c10'
+        initial_solution[0][3][2] = 'c1'
+
+        initial_solution[1][0][0] = 'c8'
+        initial_solution[1][0][1] = ''
+        initial_solution[1][0][2] = ''
+
+        initial_solution[1][1][0] = ''
+        initial_solution[1][1][1] = 'c9'
+        initial_solution[1][1][2] = ''
+
+        initial_solution[1][2][0] = 'c2'
+        initial_solution[1][2][1] = 'c10'
+        initial_solution[1][2][2] = 'c5'
+
+        initial_solution[1][3][0] = 'c5'
+        initial_solution[1][3][1] = ''
+        initial_solution[1][3][2] = ''
+
+        initial_solution[2][0][0] = 'c6'
+        initial_solution[2][0][1] = 'c10'
+        initial_solution[2][0][2] = ''
+
+        initial_solution[2][1][0] = 'c7'
+        initial_solution[2][1][1] = 'c3'
+        initial_solution[2][1][2] = 'c10'
+
+        initial_solution[2][2][0] = 'c4'
+        initial_solution[2][2][1] = ''
+        initial_solution[2][2][2] = 'c5'
+
+        initial_solution[2][3][0] = ''
+        initial_solution[2][3][1] = ''
+        initial_solution[2][3][2] = 'c5'
+
+        initial_solution[3][0][0] = 'c8'
+        initial_solution[3][0][1] = 'c6'
+        initial_solution[3][0][2] = ''
+
+        initial_solution[3][1][0] = 'c7'
+        initial_solution[3][1][1] = 'c9'
+        initial_solution[3][1][2] = ''
+
+        initial_solution[3][2][0] = 'c3'
+        initial_solution[3][2][1] = ''
+        initial_solution[3][2][2] = ''
+
+        initial_solution[3][3][0] = 'c2'
+        initial_solution[3][3][1] = 'c3'
+        initial_solution[3][3][2] = ''
         # initial_solution = maxSAT.solve(schedule, self.instance_data, unscheduled_lectures)
         print("Initial Solution: ", initial_solution)
-        return initial_solution
+        return initial_solution, Uc
 
 
 
