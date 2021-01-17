@@ -31,7 +31,8 @@ class maxSAT:
             rows.append(row)
 
         # write formatted input to a file to be used by the next process (max-SAT)
-        partial_temp_filename = 'C:/Users/vlere/AppData/Local/Temp/partial' + str(uuid.uuid4())
+        # partial_temp_filename = 'C:/Users/vlere/AppData/Local/Temp/partial' + str(uuid.uuid4())
+        partial_temp_filename = '/tmp/partial' + str(uuid.uuid4())
         try:
             os.remove(partial_temp_filename)
         except OSError:

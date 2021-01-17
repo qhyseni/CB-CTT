@@ -28,24 +28,28 @@ class maxSAT:
             rows.append(row)
 
         # write formatted input to a file to be used by the next process (max-SAT)
-        partial_temp_filename = 'C:/Users/vlere/AppData/Local/Temp/partial' + str(uuid.uuid4())
+        # partial_temp_filename = 'C:/Users/vlere/AppData/Local/Temp/partial' + str(uuid.uuid4())
+        partial_temp_filename = '/tmp/partial' + str(uuid.uuid4())
         try:
             os.remove(partial_temp_filename)
         except OSError:
             pass
-        with open(partial_temp_filename, 'w+') as f:
+        # with open(partial_temp_filename, 'w+') as f:
+        with open(partial_temp_filename, 'a+') as f:
 
             for row in rows:
                 f.write(row)
 
         # file where the output will be written to
-        output_file = 'C:/Users/vlere/AppData/Local/Temp/output' + str(uuid.uuid4()) + '.txt'
-        # output_file = configs.cbctt_dir + configs.output_name
+        # output_file = 'C:/Users/vlere/AppData/Local/Temp/output' + str(uuid.uuid4()) + '.txt'
+        output_file = configs.cbctt_dir + configs.output_name + str(uuid.uuid4())
 
         # start process to execute Max-SAT
         with open('my-stdout.txt', 'w+') as logfile:
             process = subprocess.Popen(
-                ['cmd', 'java', '-jar',
+                [
+                    # 'cmd', 'java', '-jar',
+                'java', '-jar',
                  configs.jar_path,
                  configs.datasets_dir + configs.instance_name,
                  partial_temp_filename,
@@ -73,11 +77,11 @@ class maxSAT:
             with open(output_file, "r") as content:
                 for line in content:
                     values = line.rstrip('\n').split(' ')
-                    if values != [-1]:
+                    if values != ['']:
                         day = int(values[2])
                         period = int(values[3])
                         room = instance_data.rooms.index(next((i for i in instance_data.rooms if i.id == values[1]), None))
-                        schedule[day][period][room] = values[0]
+                        schedule[day][period][room] = instance_data.courses_ids.index(values[0])
 
             os.remove(output_file)
 

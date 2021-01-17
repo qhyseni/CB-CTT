@@ -258,10 +258,10 @@ class alns:
         for l in Uc:
             lectures_removed.append(l)
 
-        repair_operator_index = 0
-        lecture_period_operator_index = 0
-        lecture_room_operator_index = 0
-        priority_rule_index = 0
+        # repair_operator_index = 0
+        # lecture_period_operator_index = 0
+        # lecture_room_operator_index = 0
+        # priority_rule_index = 0
         if repair_operator_index == 0:
             schedule, Uc = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed,
                                                                                 operators_lookup.lecture_period_operators[lecture_period_operator_index],

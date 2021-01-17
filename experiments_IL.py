@@ -15,13 +15,14 @@ import time
 #              'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
 #
 
-instances = ['comp03']
+instances = ['comp01']
 # IL = [50, 100, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12000]
-IL = [100, 500, 1000, 5000, 8000, 10000]
+IL = [8000]
+# IL = [100, 500, 1000, 5000, 8000, 10000]
 
 # ------------ w1 parameter tuning ------------- #
 
-configs.instance_name = "comp03.ectt"
+configs.instance_name = "comp01.ectt"
 
 wb = xlwt.Workbook()
 
@@ -68,7 +69,7 @@ for param_value in IL:
 
     print('INSTANCE' + configs.instance_name +'\n')
 
-    for i in range(0, 10):
+    for i in range(1):
         row = row + 1
         print(i)
         alns_instance = alns()
