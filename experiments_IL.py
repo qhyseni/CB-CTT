@@ -2,7 +2,7 @@ import xlwt
 from datetime import datetime
 from Experiments.configs import configs
 from Experiments.parameters import parameters
-from alns import alns
+from _alns import alns
 import random
 from Experiments.statistics import statistics
 
@@ -15,13 +15,13 @@ import time
 #              'comp16', 'comp17', 'comp18', 'comp19', 'comp20','comp21']
 #
 
-instances = ['testtest']
+instances = ['comp03']
 # IL = [50, 100, 500, 1000, 2000, 4000, 6000, 8000, 10000, 12000]
 IL = [100, 500, 1000, 5000, 8000, 10000]
 
 # ------------ w1 parameter tuning ------------- #
 
-configs.instance_name = "testtest.ectt"
+configs.instance_name = "comp03.ectt"
 
 wb = xlwt.Workbook()
 

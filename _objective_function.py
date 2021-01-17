@@ -1,9 +1,9 @@
 import xml_to_od
-from Entities.penalty import penalty
+from Models.penalty import penalty
 from Experiments.statistics import statistics
 
 
-class objective_functionn:
+class objective_function:
 
     def __init__(self, type, instance_data):
 
@@ -18,8 +18,8 @@ class objective_functionn:
 
         # initialize a dictionary that will help to keep track of courses penalties
         course_penalties = dict()
-        for course in self.instance_data.courses:
-            course_penalties[course.id] = 0
+        for i in range(self.instance_data.courses_count):
+            course_penalties[i] = 0
 
         # initialize a dictionary that will help to keep track of curricula penalties
         curriculum_penalties = dict()
@@ -58,15 +58,14 @@ class objective_functionn:
         for i in range(self.instance_data.days):
             for j in range(self.instance_data.periods_per_day):
                 for k in range(self.instance_data.rooms_count):
-                    if current_solution[i][j][k] != "":
-                        course_id = current_solution[i][j][k]
-                        course = next(x for x in self.instance_data.courses if x.id == course_id)
-                        students = int(course.students)
+                    if current_solution[i][j][k] != -1:
+                        course_index = current_solution[i][j][k]
+                        students = self.instance_data.courses_students[course_index]
                         room_size = int(self.instance_data.rooms[k].size)
                         if students - room_size > 0:
                             extra_students = students - room_size
                             penalty += extra_students
-                            course_penalties[course_id] += extra_students
+                            course_penalties[course_index] += extra_students
 
         return penalty, course_penalties
 
@@ -76,14 +75,14 @@ class objective_functionn:
 
         penalty = 0
 
-        for course in self.instance_data.courses:
-            min_days = int(course.min_days)
+        for course in range(self.instance_data.courses_count):
+            min_days = self.instance_data.courses_wdays[course]
             course_days = 0
             for i in range(self.instance_data.days):
                 course_in_day = False
                 for j in range(self.instance_data.periods_per_day):
                     for k in range(self.instance_data.rooms_count):
-                        if course.id == current_solution[i][j][k]:
+                        if course == current_solution[i][j][k]:
                             course_in_day = True
                             break
                     if course_in_day:
@@ -94,7 +93,7 @@ class objective_functionn:
             if course_days < min_days:
                 cost = (min_days - course_days) * self.penalties.P_DAYS
                 penalty += cost
-                course_penalties[course.id] += cost
+                course_penalties[course] += cost
 
         return penalty, course_penalties
 
@@ -116,8 +115,8 @@ class objective_functionn:
                         curriculum_windows += 1
                     for k in range(self.instance_data.rooms_count):
                         course = current_solution[i][j][k]
-                        if course != "":
-                            if check_for_windows and course in curriculum.courses:
+                        if course != -1:
+                            if check_for_windows and curriculum in self.instance_data.courses_curricula[course]:
                                 penalty += curriculum_windows - 1
                                 curriculum_penalties[curriculum.id] += curriculum_windows - 1
                                 curriculum_windows = 0
@@ -140,11 +139,9 @@ class objective_functionn:
                 daily_lectures = 0
                 for j in range(self.instance_data.periods_per_day):
                     for k in range(self.instance_data.rooms_count):
-                        if current_solution[i][j][k] != "":
-                            course = next((c for c in curriculum.courses if c == current_solution[i][j][k]), None)
-                            if course is not None:
-                                daily_lectures += 1
-                                break
+                        if current_solution[i][j][k] != -1 and curriculum in self.instance_data.courses_curricula[current_solution[i][j][k]]:
+                            daily_lectures += 1
+                            break
 
                 if daily_lectures > self.instance_data.daily_max_lectures:
                     penalty += daily_lectures - self.instance_data.daily_max_lectures
@@ -163,14 +160,14 @@ class objective_functionn:
 
         penalty = 0
 
-        for course in self.instance_data.courses:
+        for course in range(self.instance_data.courses_count):
             if course.double_lectures == 'yes':
                 for i in range(self.instance_data.days):
                     course_periods = []
                     for j in range(self.instance_data.periods_per_day):
                         course_in_day = False
                         for k in range(self.instance_data.rooms_count):
-                            if course.id == current_solution[i][j][k]:
+                            if course == current_solution[i][j][k]:
                                 course_in_day = True
                                 break
 
@@ -206,7 +203,7 @@ class objective_functionn:
                     curriculum_in_day = False
                     for k in range(self.instance_data.rooms_count):
                         course = current_solution[i][j][k]
-                        if course != "" and course in curriculum.courses:
+                        if course != -1 and curriculum in self.instance_data.courses_curricula[course]:
                             curriculum_in_day = True
                             break
                     if curriculum_in_day:
@@ -234,13 +231,13 @@ class objective_functionn:
 
         penalty = 0
 
-        for course in self.instance_data.courses:
+        for course in range(self.instance_data.courses_count):
                 course_room = None
                 course_rooms = []
                 for i in range(self.instance_data.days):
                     for j in range(self.instance_data.periods_per_day):
                         for k in range(self.instance_data.rooms_count):
-                            if current_solution[i][j][k] == course.id:
+                            if current_solution[i][j][k] == course:
                                 room = self.instance_data.rooms[k].id
                                 if course_room is None:
                                     course_room = room
@@ -248,7 +245,7 @@ class objective_functionn:
                                 elif course_room != room and room not in course_rooms:
                                     course_rooms.append(room)
                                     penalty += self.penalties.P_STAB
-                                    course_penalties[course.id] += self.penalties.P_STAB
+                                    course_penalties[course] += self.penalties.P_STAB
 
         return penalty, course_penalties
 

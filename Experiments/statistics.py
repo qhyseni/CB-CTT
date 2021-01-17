@@ -23,6 +23,7 @@ class statistics:
     two_stage_match_count = 0
     backtrack_count = 0
     maxsat_count = 0
+    ga_steady_state_count = 0
 
     saturation_degree_count = 0
     largest_degree_count = 0

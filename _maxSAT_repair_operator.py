@@ -1,9 +1,6 @@
 import subprocess
 import os
 import uuid
-import sys
-from subprocess import Popen, PIPE, STDOUT
-import time
 from Experiments.configs import configs
 from Experiments.statistics import statistics
 
@@ -21,13 +18,13 @@ class maxSAT:
         for i in range(instance_data.days):
             for j in range(instance_data.periods_per_day):
                 for k in range(instance_data.rooms_count):
-                    if schedule[i][j][k] != "":
-                        row = schedule[i][j][k] + " " + instance_data.rooms[k].id + " " + str(i) + " " + str(
+                    if schedule[i][j][k] != -1:
+                        row = instance_data.courses_ids[schedule[i][j][k]] + " " + instance_data.rooms[k].id + " " + str(i) + " " + str(
                             j) + '\n'
                         rows.append(row)
 
         for lecture in lectures_removed:
-            row = lecture + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
+            row = instance_data.courses_ids[lecture] + " " + "-1" + " " + "-1" + " " + "-1" + '\n'
             rows.append(row)
 
         # write formatted input to a file to be used by the next process (max-SAT)
@@ -71,12 +68,12 @@ class maxSAT:
             logfile.flush()
 
         if os.path.exists(output_file):
-            schedule = [[["" for k in range(len(instance_data.rooms))] for j in range(instance_data.periods_per_day)] for i in
+            schedule = [[[-1 for k in range(len(instance_data.rooms))] for j in range(instance_data.periods_per_day)] for i in
                         range(instance_data.days)]
             with open(output_file, "r") as content:
                 for line in content:
                     values = line.rstrip('\n').split(' ')
-                    if values != ['']:
+                    if values != [-1]:
                         day = int(values[2])
                         period = int(values[3])
                         room = instance_data.rooms.index(next((i for i in instance_data.rooms if i.id == values[1]), None))

@@ -1,11 +1,11 @@
 import xml_to_od
-import ectt_to_od
-from Entities.instance import instance
-from objective_function import objective_function
-from initial_solution import initial_solution
-from roulette_wheel_selection import roulette_wheel_selection
-from simulated_annealing import simulated_annealing
-from operators_lookup import operators_lookup
+from _ectt_to_od import ectt_data
+from Models.instance import instance
+from _objective_function import objective_function
+from _initial_solution import initial_solution
+from _roulette_wheel_selection import roulette_wheel_selection
+from _simulated_annealing import simulated_annealing
+from _operators_lookup import operators_lookup
 import random
 import math
 import os
@@ -22,7 +22,7 @@ class alns:
         if configs.instance_type == 1:
             raw_data = xml_to_od.xml_data()
         else:
-            raw_data = ectt_to_od.ectt_data()
+            raw_data = ectt_data()
 
         self.instance_data = instance(raw_data)
 
@@ -41,11 +41,12 @@ class alns:
         statistics_instance.reset()
 
         obj_func_instance = objective_function("UD2", self.instance_data)
-    
+
         current_best = solution
     
         # Calculate cost/objective function of current solution
         current_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(solution)
+
         avg_cost = current_cost / self.instance_data.total_lectures
         unassigned_lectures_cost = max(float(1), float(avg_cost))
         current_cost += unassigned_lectures_cost * len(Uc)
@@ -84,12 +85,12 @@ class alns:
             removal_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.removal_operators_weights)
             print("Removal Operators Probabilities: ", removal_operators_probabilities)
             removal_operator_index = roulette_wheel_selection.spin_roulettewheel(removal_operators_probabilities)
-            removal_operator_index = 5
+            # removal_operator_index = 5
 
             repair_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.repair_operators_weights)
             print("Repair Operators Probabilities: ", repair_operators_probabilities)
             repair_operator_index = roulette_wheel_selection.spin_roulettewheel(repair_operators_probabilities)
-            repair_operator_index = 1
+            # repair_operator_index = 1
 
             lecture_period_operators_probabilities = roulette_wheel_selection.get_probability_list(operators_lookup.lecture_period_operators_weights)
             print("Lecture-Period Operators Probabilities: ", lecture_period_operators_probabilities)
@@ -124,7 +125,7 @@ class alns:
             # -------------------------------------------------------------------------------------------------------------------- #
             # number of events to be destroyed (lectures to remove) in this iteration
             destroy_limit = min(self.instance_data.total_lectures - len(Uc), parameters.min_destroy_lectures +
-                                (random.randrange(max(parameters.min_destroy_lectures, destroy_upper_bound - round(math.pow(iterations_since_reheat, destroy_decrease_power))))))
+                                (random.randrange(max(parameters.min_destroy_lectures, round(destroy_upper_bound) - round(math.pow(iterations_since_reheat, destroy_decrease_power))))))
 
             # Find neighbor solution by applying destruction/repair operator to the current solution
             new_sol, Uc = self.neighbor(solution, destroy_limit,
@@ -245,8 +246,7 @@ class alns:
 
         # different destroy operators expect different input parameters
         # we are handling it accordingly below
-        # QENDRESA remove line below
-        removal_operator_index = 5
+        # removal_operator_index = 5
         if removal_operator_index == 0:
             schedule, lectures_removed = operators_lookup.removal_operators[removal_operator_index](solution, lectures_to_remove, self.instance_data, courses_penalties)
         elif removal_operator_index == 1:
