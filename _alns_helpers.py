@@ -18,22 +18,22 @@ class alns_helpers:
 
     def check_course_conflicts(schedule, instance_data, course):
 
-        course_conflicts = []
         course_conflicts_count = 0
 
         for iteration_course in range(instance_data.courses_count):
+            conflicted = False
             if iteration_course != course:
-                for q in instance_data.courses_curricula[course]:
-                    # if courses have conflicting curriculum
-                    if q in instance_data.courses_curricula[iteration_course] not in course_conflicts:
-                        course_conflicts.append(iteration_course)
-                        break;
 
-                if instance_data.courses_teachers[iteration_course] == instance_data.courses_teachers[course] and iteration_course not in course_conflicts:
-                    course_conflicts.append(iteration_course)
+                if instance_data.courses_teachers[iteration_course] == instance_data.courses_teachers[course]:
+                    conflicted = True
 
-        for conflict_course in course_conflicts:
-            course_conflicts_count += instance_data.courses_lectures[conflict_course]
+                # if courses have conflicting curricula
+                if not set(instance_data.courses_curricula[iteration_course]).isdisjoint(
+                        instance_data.courses_curricula[course]) and not conflicted:
+                    conflicted = True
+
+                if conflicted:
+                    course_conflicts_count += instance_data.courses_lectures[iteration_course]
 
         return course_conflicts_count
 
@@ -44,6 +44,17 @@ class alns_helpers:
         if [d, p] in instance_data.courses_periods_constraints[course]:
             return False
 
+        # even if checking the feasibility in the fixed schedule regarding scheduling students of same curriculum at the same time
+        # we need to check also against lectures that are assigned to this period in previous steps
+        # during repair operators
+        for assigned_course in assigned_lectures_to_period:
+            if instance_data.courses_teachers[assigned_course] == instance_data.courses_teachers[course]:
+                return False
+
+            if not set(instance_data.courses_curricula[assigned_course]).isdisjoint(
+                    instance_data.courses_curricula[course]):
+                return False
+
         # check against fixed schedule
         rooms_available = 0
         for r in range(instance_data.rooms_count):
@@ -51,21 +62,12 @@ class alns_helpers:
             if assigned_course == -1:
                 rooms_available += 1
             else:
-                for q in instance_data.courses_curricula[course]:
-                    if q in instance_data.courses_curricula[assigned_course]:
-                        return False
                 if instance_data.courses_teachers[assigned_course] == instance_data.courses_teachers[course]:
                     return False
 
-        # even if after checking the feasibility in the fixed schedule regarding scheduling students of same curriculum at the same time
-        # we need to check also against lectures that are assigned to this period in previous steps
-        # during repair operators
-        for assigned_course in assigned_lectures_to_period:
-            for q in instance_data.courses_curricula[course]:
-                if q in instance_data.courses_curricula[assigned_course]:
+                if not set(instance_data.courses_curricula[assigned_course]).isdisjoint(
+                        instance_data.courses_curricula[course]):
                     return False
-            if instance_data.courses_teachers[assigned_course] == instance_data.courses_teachers[course]:
-                return False
 
         # if there are rooms available from the fixed schedule, check how many lectures are assigned to this period in previous stages
         # so we make sure we don't assign more lectures than rooms in any period
@@ -151,11 +153,10 @@ class alns_helpers:
             if neighbor_course == c:
                 has_neighbor = True
                 break
-            for q in instance_data.courses_curricula[c]:
-                if q in instance_data.courses_curricula[neighbor_course]:
-                    has_neighbor = True
-                    break
-            if has_neighbor:
+
+            if not set(instance_data.courses_curricula[neighbor_course]).isdisjoint(
+                    instance_data.courses_curricula[c]):
+                has_neighbor = True
                 break
 
         # if no courses from same curricula found in adjacent slot
@@ -168,14 +169,31 @@ class alns_helpers:
                     if neighbor_course == c:
                         has_neighbor = True
                         break
-                    for q in instance_data.courses_curricula[c]:
-                        if q in instance_data.courses_curricula[neighbor_course]:
-                            has_neighbor = True
-                            break
-                    if has_neighbor:
+                    if not set(instance_data.courses_curricula[neighbor_course]).isdisjoint(
+                            instance_data.courses_curricula[c]):
+                        has_neighbor = True
                         break
 
         return has_neighbor
+
+    def course_exists_in_day(schedule, instance_data, period_lecture_assignments, day, course):
+
+        period_assigned_courses = [x.course for x in period_lecture_assignments if
+                                   x.day == day]
+
+        # check if any lecture of this course is already assigned to this day
+        # so we count it in the spread days cost
+        if course in period_assigned_courses:
+            return True
+
+        # if no lecture of the course is scheduled to this day during the period-lecture assignment stage
+        # we check if any lecture of the course is scheduled in this day in the fixed schedule
+        for p in range(instance_data.periods_per_day):
+            for r in range(instance_data.rooms_count):
+                if schedule[day][p][r] == course:
+                    return True
+
+        return False
 
     def calculate_spread_days_cost(schedule, instance_data, period_lecture_assignments, day, course):
 
@@ -183,38 +201,24 @@ class alns_helpers:
         spread = 0
         cost = 0
 
-        # Whenever the required spread over days of the course is not reached and
-        # no other lecture of the same course has been scheduled on the considered day,
-        # the respective penalty is subtracted, since the solution will be improved.
-        course_exists_in_considered_day = False
-        for d in range(instance_data.days):
-            course_scheduled_in_day = False
-            # check if any lecture of this course is already assigned to this day
-            # so we count it in the spread days cost
-            period_assigned_courses = [x.course for x in period_lecture_assignments if
-                                       x.day == d]
-            if course in period_assigned_courses:
-                course_scheduled_in_day = True
+        course_exists_in_day = alns_helpers.course_exists_in_day(schedule, instance_data, period_lecture_assignments, day, course)
 
-            # if no lecture of the course is scheduled to this day during the period-lecture assignment stage
-            # we check if any lecture of the course is scheduled in this day in the fixed schedule
-            if not course_scheduled_in_day:
-                for p in range(instance_data.periods_per_day):
-                    for r in range(instance_data.rooms_count):
-                        if schedule[d][p][r] == course:
-                            course_scheduled_in_day = True
-                            break
+        if not course_exists_in_day:
+            # Whenever the required spread over days of the course is not reached and
+            # no other lecture of the same course has been scheduled on the considered day,
+            # the respective penalty is subtracted, since the solution will be improved.
+
+            for d in range(instance_data.days):
+                if d != day:
+
+                    course_scheduled_in_day = alns_helpers.course_exists_in_day(schedule, instance_data,
+                                                                             period_lecture_assignments, day, course)
 
                     if course_scheduled_in_day:
-                        break
+                        spread += 1
 
-            if course_scheduled_in_day:
-                spread += 1
-                if d == day:
-                    course_exists_in_considered_day = True
-
-        if instance_data.courses_wdays[course] > spread and not course_exists_in_considered_day:
-            cost -= penalty_instance.get_min_wdays_penalty()
+            if instance_data.courses_wdays[course] > spread:
+                cost -= penalty_instance.get_min_wdays_penalty()
 
         print("Minimum Spread Days Cost for day {}, course {}: {}".format(day, course , cost))
         return cost
@@ -230,19 +234,16 @@ class alns_helpers:
         for d in range(instance_data.days):
             for p in range(instance_data.periods_per_day):
                 for r in range(instance_data.rooms_count):
-                    if schedule[d][p][r] == c and not r in scheduled_rooms:
+                    if schedule[d][p][r] == c and r not in scheduled_rooms:
                         scheduled_rooms.append(r)
                         break
 
         available_room = False
         # if we want to calculate the cost for a certain room
-        if room is not None:
-            if room in scheduled_rooms:
-                available_room = True
-            else:
-                available_room = False
-        # if we want to calculate the cost comparing all rooms
+        if room is not None and room in scheduled_rooms:
+            available_room = True
         else:
+            # if we want to calculate the cost comparing all rooms
             for r in range(instance_data.rooms_count):
                 if r in scheduled_rooms and schedule[day][period][r] == -1:
                     available_room = True
@@ -286,7 +287,7 @@ class alns_helpers:
                 # we will be evaluating which period results in more conflicts so we decide from which to remove courses
                 # namely, when we come at this step we will already be having more courses we want to assign to the period
                 # because we havent decided yet from which to remove, and if we want to evaluate this we suppose that we will remove courses
-                # form this period, and we calculate the cost only by the difference of the course we want to schedule and the available rooms
+                # from this period, and we calculate the cost only by the difference of the course we want to schedule and the available rooms
                 if (courses_to_schedule_length > available_rooms_length):
                    cost += max(0, (instance_data.courses_students[course] - int(available_rooms[0].size)))
                 else:

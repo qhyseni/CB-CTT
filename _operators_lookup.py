@@ -1,8 +1,9 @@
 
 from _alns_destroy_operators import destroy_operators
 from _two_stage_repair_operator import two_stage_repair_operator
-from _maxSAT_repair_operator import maxSAT
 from _priority_rules import priority_rules
+from _ga_mutate_operators import ga_mutate_operators
+from _ga_steady_state_repair_operator import ga_steady_state_repair_operator
 from Experiments.statistics import statistics
 
 class operators_lookup:
@@ -36,8 +37,8 @@ class operators_lookup:
 
     # array of repair operators methods with tuple of position (key) and value (method name)
     repair_operators = {
-        0: two_stage_repair_operator.two_stage_repair_operator,
-        1: maxSAT.solve
+        0: two_stage_repair_operator.execute,
+        1: ga_steady_state_repair_operator.execute
     }
 
     # Initial weights of lecture-room assignment operators set to 1

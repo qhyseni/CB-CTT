@@ -51,3 +51,12 @@ class parameters:
     # reheat_limit = 60000
     # always remove at least 10 lectures
     min_destroy_lectures = 10
+
+
+    # GA Steady State Algorithm
+
+    pop_size = 100
+    tournament_size = 15
+    mutation_rate = 10
+    alternation_frequency = 10
+    max_generations = 1000

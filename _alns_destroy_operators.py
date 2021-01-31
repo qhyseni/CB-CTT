@@ -17,7 +17,10 @@ class destroy_operators:
         while destroy_limit > 0:
             courses_count = len(sorted_course_penalties)
             upsilon = random.random()
-            index_for_removal = math.floor(courses_count * (upsilon ** parameters.selection_probability))
+            try:
+                index_for_removal = math.floor(courses_count * (upsilon ** parameters.selection_probability))
+            except:
+                print()
             a = sorted_course_penalties[index_for_removal]
             del sorted_course_penalties[index_for_removal]
 
@@ -42,7 +45,10 @@ class destroy_operators:
         while destroy_limit > 0:
             curricula_count = len(sorted_curriculum_penalties)
             upsilon = random.random()
-            index_for_removal = math.floor(curricula_count * (upsilon ** parameters.selection_probability))
+            try:
+                index_for_removal = math.floor(curricula_count * (upsilon ** parameters.selection_probability))
+            except:
+                print()
             a = sorted_curriculum_penalties[index_for_removal]
             del sorted_curriculum_penalties[index_for_removal]
 

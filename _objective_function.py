@@ -203,7 +203,7 @@ class objective_function:
                     curriculum_in_day = False
                     for k in range(self.instance_data.rooms_count):
                         course = current_solution[i][j][k]
-                        if course != -1 and curriculum in self.instance_data.courses_curricula[course]:
+                        if course != -1 and curriculum.id in self.instance_data.courses_curricula[course]:
                             curriculum_in_day = True
                             break
                     if curriculum_in_day:

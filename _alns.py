@@ -132,6 +132,26 @@ class alns:
                                     removal_operator_index, repair_operator_index, lecture_period_operator_index, lecture_room_operator_index, priority_rule_index,
                                     courses_penalties, curricula_penalties, Uc)
 
+            if statistics.backtrack_count > 0:
+                rows = []
+
+                for i in range(self.instance_data.days):
+                    for j in range(self.instance_data.periods_per_day):
+                        for k in range(self.instance_data.rooms_count):
+                            if new_sol[i][j][k] != -1:
+                                row = self.instance_data.courses_ids[new_sol[i][j][k]] + " " + \
+                                      self.instance_data.rooms[
+                                          k].id + " " + str(i) + " " + str(
+                                    j) + '\n'
+                                rows.append(row)
+
+                # write formatted input to a file to be used by the next process (max-SAT)
+                partial_temp_filename = 'C:/Users/vlere/qq/backtsol'
+
+                with open(partial_temp_filename, 'w+') as f:
+                    for row in rows:
+                        f.write(row)
+
             if new_sol is not None:
                 # Calculate the new solution's cost
                 new_cost, courses_penalties, curricula_penalties = obj_func_instance.cost(new_sol)
@@ -268,7 +288,7 @@ class alns:
                                                                                 operators_lookup.lecture_room_operators[lecture_room_operator_index],
                                                                                 operators_lookup.priority_rules[priority_rule_index])
         elif repair_operator_index == 1:
-            schedule, Uc = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed)
+            schedule = operators_lookup.repair_operators[repair_operator_index](schedule, self.instance_data, lectures_removed)
 
         return schedule, Uc
     

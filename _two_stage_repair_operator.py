@@ -9,7 +9,7 @@ class two_stage_repair_operator:
 
     ###################### Repair operators #############################################
 
-    def two_stage_repair_operator(schedule, instance_data, unscheduled_lectures, lecture_period_heuristic, lecture_room_heuristic, priority_rule_operator):
+    def execute(schedule, instance_data, unscheduled_lectures, lecture_period_heuristic, lecture_room_heuristic, priority_rule_operator):
         print("2-stage Repair Operator")
         statistics.two_stage_count += 1
 

@@ -1,4 +1,4 @@
-class population:
+class population_member:
 
     def __init__(self, id, schedule, fitness):
         self.id = id
